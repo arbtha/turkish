@@ -198,8 +198,8 @@
   <script type="module">
         // استيراد وظائف Firebase من النطاق العام بعد التحميل
         const { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, 
-                getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, orderBy, addDoc, deleteDoc, 
-                getStorage, ref, uploadBytes, getDownloadURL, deleteObject, setLogLevel } = window.firebase;
+                getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, orderBy, where, addDoc, deleteDoc, 
+                getStorage, ref, uploadBytes, getDownloadURL, deleteObject, setLogLevel, updateProfile } = window.firebase;
         
         // المتغيرات العامة للحالة و Firebase
         let currentUser = null;
@@ -406,13 +406,6 @@
             document.getElementById('confirmDeleteBtn').addEventListener('click', handleDeleteRoomConfirmed);
             document.getElementById('cancelDeleteBtn').addEventListener('click', hideDeleteConfirmModal);
             
-            // إغلاق القائمة عند النقر خارجها
-            document.getElementById('menuOverlay').addEventListener('click', (e) => {
-                if (e.target === document.getElementById('menuOverlay')) {
-                    hideMenu();
-                }
-            });
-            
             // التحكم في الفيديو للمنشئ
             document.getElementById('playPauseBtn').addEventListener('click', togglePlayPause);
         }
@@ -455,16 +448,22 @@
             if (file) {
                 videoFile = file;
                 document.getElementById('createRoomBtn').disabled = false;
+                showToast(`تم اختيار الملف: ${file.name}`); // *** إشعار عند اختيار الملف بنجاح ***
             }
         }
 
         // إنشاء الغرفة
         async function createRoom() {
-            if (!videoFile || !userId) {
-                showToast('يرجى اختيار ملف فيديو وتسجيل الدخول');
+            const authUser = auth.currentUser; // جلب حالة المصادقة الحالية
+            
+            // *** الإصلاح الرئيسي: التحقق الصارم من حالة المصادقة قبل الرفع ***
+            // نتحقق من وجود ملف الفيديو، ID المستخدم، بيانات المستخدم، واسم المستخدم، وحالة المصادقة الحالية
+            if (!videoFile || !userId || !currentUser || !currentUser.name || !authUser) {
+                console.error("Authentication/State Check Failed. userId:", userId, "currentUser:", currentUser, "AuthUser:", authUser);
+                showToast('يرجى اختيار ملف فيديو والانتظار حتى يتم تسجيل الدخول بالكامل (تأكد من إدخال اسمك أولاً في شاشة تسجيل الدخول).');
                 return;
             }
-
+            
             const roomId = generateId();
             currentRoomId = roomId;
             isHost = true;
@@ -477,8 +476,8 @@
             progressMsg.classList.remove('hidden');
 
             try {
-                // 1. Upload video to Storage
-                const videoPath = `rooms/${roomId}/${videoFile.name}`;
+                // 1. Upload video to Storage - (Path is correct for public data access by authenticated users)
+                const videoPath = `artifacts/${appId}/public/data/videos/rooms/${roomId}/${videoFile.name}`;
                 const storageRef = ref(storage, videoPath);
                 
                 // إضافة مؤشر للتحميل (اختياري)
@@ -515,9 +514,15 @@
                 
             } catch (error) {
                 console.error('فشل في إنشاء الغرفة:', error);
-                showToast('فشل في إنشاء الغرفة أو تحميل الفيديو. (قد تكون مشكلة في الرفع)');
+                // إعادة إتاحة الزر في حال الفشل
                 createBtn.disabled = false;
                 progressMsg.classList.add('hidden');
+                // عرض رسالة الخطأ للمستخدم
+                if (error.code === 'storage/unauthorized') {
+                    showToast('فشل في رفع الفيديو: لا توجد صلاحيات. تأكد أنك مصادق وأن قواعد أمان Storage تسمح بالوصول للمسار العام.');
+                } else {
+                    showToast('فشل في إنشاء الغرفة أو تحميل الفيديو. (قد تكون مشكلة في الرفع)');
+                }
             }
         }
 
@@ -548,23 +553,23 @@
             video.src = url;
             videoUrl = url; // حفظ URL لاستخدامه لاحقاً
 
-            // إزالة المستمعات القديمة
-            video.onpause = video.onplay = video.onseeked = null;
+            // *** التعديل: إزالة المستمعات لضمان عدم تكرار البث أو تداخله ***
+            video.onpause = null;
+            video.onplay = null;
+            video.onseeked = null;
             
             if (isHost) {
                 document.getElementById('hostControls').classList.remove('hidden');
-                // بث الحالة عند أي تفاعل من المنشئ
-                video.onpause = () => broadcastVideoState('pause');
-                video.onplay = () => broadcastVideoState('play');
+                
+                // إعادة تعيين المستمعات الخاصة بالمضيف
+                video.onpause = () => { broadcastVideoState('pause'); updatePlayPauseButton(false); };
+                video.onplay = () => { broadcastVideoState('play'); updatePlayPauseButton(true); };
                 // استخدام seeked لضمان استقرار وقت الفيديو قبل البث
                 video.onseeked = () => broadcastVideoState('seek');
-                // تحديث حالة زر التشغيل/الإيقاف محلياً
-                video.onpause = () => updatePlayPauseButton(false);
-                video.onplay = () => updatePlayPauseButton(true);
 
                 // لضمان تزامن الوقت بشكل دوري إذا لم يكن هناك تفاعل
                 setInterval(() => {
-                    if (!video.paused) {
+                    if (!video.paused && currentRoomId === currentRoomId && isHost) {
                          broadcastVideoState('sync');
                     }
                 }, 5000); 
@@ -816,7 +821,8 @@
         // نسخ رابط الغرفة
         function copyRoomLink() {
             if (!currentRoomId) return showToast('لا يوجد رابط للغرفة');
-            const link = `${window.location.origin}${window.location.pathname}?room=${currentRoomId}`;
+            // *** تم التعديل هنا لاستخدام المسار الثابت المطلوب ***
+            const link = `https://arbtha.github.io/turkish/?room=${currentRoomId}`;
             
             if (navigator.clipboard) {
                 navigator.clipboard.writeText(link).then(() => {
@@ -882,6 +888,7 @@
 
         async function uploadAvatarFile(file) {
             try {
+                // نستخدم ID المستخدم لضمان أن المستخدم يملك الملف
                 const avatarPath = `avatars/${userId}/${generateId()}-${file.name}`;
                 const storageRef = ref(storage, avatarPath);
                 
