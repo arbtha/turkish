@@ -67,6 +67,7 @@
             display: flex; 
             justify-content: center;
             align-items: center;
+            /* يتم التحكم بالتحويل عبر JS عند إظهار الدردشة المصغرة */
         }
 
         .fullscreen-video > video {
@@ -141,7 +142,26 @@
     </div>
    </div>
   </div><!-- شاشة الغرفة -->
-  <div id="roomScreen" class="hidden min-h-full flex flex-col"><!-- شريط علوي -->
+  <div id="roomScreen" class="hidden min-h-full flex flex-col">
+    <!-- منطقة الدردشة المصغرة في وضع ملء الشاشة (Swipe Chat) -->
+    <div id="compactChat" class="fixed top-0 bottom-0 left-0 w-80 bg-black/80 backdrop-blur-lg z-[1001] transition-transform duration-300 ease-in-out transform -translate-x-full hidden md:w-96">
+        <div class="h-full flex flex-col">
+            <div class="p-4 flex justify-between items-center border-b border-white/10">
+                <h3 class="text-lg font-semibold">الدردشة (شاشة كاملة)</h3>
+                <button id="closeCompactChatBtn" class="p-1 hover:bg-white/20 rounded-full transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div id="compactChatMessages" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+            <div class="p-4 border-t border-white/10">
+                <div class="flex space-x-2 space-x-reverse">
+                    <input type="text" id="compactMessageInput" class="flex-1 px-4 py-2 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-gray-400" placeholder="اكتب رسالة...">
+                    <button id="sendCompactBtn" class="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-xl font-semibold transition-colors">إرسال</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- شريط علوي -->
    <div class="bg-black/50 backdrop-blur-lg p-4 flex justify-between items-center border-b border-white/10"><button id="menuBtn" class="p-2 hover:bg-white/10 rounded-lg transition-colors">
      <div class="w-6 h-6 flex flex-col justify-center space-y-1">
       <div class="w-full h-0.5 bg-white"></div>
@@ -163,9 +183,9 @@
      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
      </svg></button>
    </div><!-- منطقة الفيديو -->
-   <div id="videoContainer" class="flex-1 bg-black relative">
-    <!-- إزالة controls لضمان عدم ظهور مشغل المتصفح الأصلي -->
-    <video id="mainVideo" class="w-full h-full object-contain"></video><!-- زر إخفاء/إظهار الدردشة في وضع ملء الشاشة --> <button id="chatToggleBtn" class="chat-toggle-btn p-2 rounded-full hidden" aria-label="Toggle Chat">
+   <div id="videoContainer" class="flex-1 bg-black relative transition-transform duration-300 ease-in-out">
+    <!-- تم إضافة crossorigin="anonymous" و playsinline هنا -->
+    <video id="mainVideo" class="w-full h-full object-contain" crossorigin="anonymous" playsinline></video><!-- زر إخفاء/إظهار الدردشة في وضع ملء الشاشة --> <button id="chatToggleBtn" class="chat-toggle-btn p-2 rounded-full hidden" aria-label="Toggle Chat">
      <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.505A9.76 9.76 0 0112 4c4.97 0 9 3.582 9 8z" />
      </svg></button><!-- أزرار التحكم للمنشئ -->
     <div id="hostControls" class="absolute bottom-0 left-0 right-0 p-4 rounded-t-lg hidden flex justify-center">
@@ -197,6 +217,12 @@
   </div><!-- قائمة الإعدادات -->
   <div id="menuOverlay" class="hidden fixed inset-0 menu-overlay z-50">
    <div class="absolute top-16 right-4 bg-white/10 backdrop-blur-lg rounded-2xl p-4 min-w-48 shadow-2xl border border-white/20">
+    <!-- زر الإغلاق -->
+    <div class="flex justify-end pb-2">
+        <button id="closeMenuBtn" class="p-1 hover:bg-white/20 rounded-full transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+    </div>
     <div class="space-y-2"><button id="copyLinkBtn" class="w-full text-right p-3 hover:bg-white/10 rounded-lg transition-colors">نسخ رابط الغرفة</button> <button id="changeNameBtn" class="w-full text-right p-3 hover:bg-white/10 rounded-lg transition-colors">تغيير الاسم</button> <button id="changeAvatarBtn" class="w-full text-right p-3 hover:bg-white/10 rounded-lg transition-colors">تغيير الصورة</button>
      <button id="deleteRoomBtn" class="w-full text-right p-3 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors hidden">حذف الغرفة</button>
      <button id="leaveRoomBtn" class="w-full text-right p-3 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors">الخروج من الغرفة</button>
@@ -254,6 +280,12 @@
         let videoFile = null;
         let videoUrl = null;
         let roomHostIdCache = null; // لتخزين ID المضيف للغرفة
+
+        // حالة السحب (Swipe) الجديدة
+        let startX = 0;
+        let isSwiping = false;
+        const swipeThreshold = 50; // بكسل لتفعيل التمرير
+        const COMPACT_CHAT_WIDTH = 320; // يتطابق مع w-80 في Tailwind
 
         let db;
         let auth;
@@ -419,6 +451,7 @@
             });
             
             // قائمة الإعدادات
+            document.getElementById('closeMenuBtn').addEventListener('click', hideMenu); // جديد: زر إغلاق القائمة
             document.getElementById('copyLinkBtn').addEventListener('click', copyRoomLink);
             document.getElementById('changeNameBtn').addEventListener('click', showChangeNameModal);
             document.getElementById('changeAvatarBtn').addEventListener('click', showChangeAvatarModal);
@@ -436,14 +469,116 @@
             
             // نافذة المشاركين
             document.getElementById('closeParticipantsBtn').addEventListener('click', hideParticipantsModal);
+            
+            // الدردشة المصغرة (Swipe Chat)
+            document.getElementById('closeCompactChatBtn').addEventListener('click', hideCompactChat);
+            document.getElementById('sendCompactBtn').addEventListener('click', sendCompactMessage);
+            document.getElementById('compactMessageInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendCompactMessage();
+            });
+
 
             // التحكم في الفيديو للمنشئ
             document.getElementById('playPauseBtn').addEventListener('click', togglePlayPause);
             document.getElementById('rewindBtn').addEventListener('click', () => seekVideo(-10)); // جديد: تأخير 10 ثواني
             document.getElementById('forwardBtn').addEventListener('click', () => seekVideo(10)); // جديد: تقديم 10 ثواني
+            
+            // إضافة مستمعات اللمس لحركة السحب (Swipe)
+            const videoContainer = document.getElementById('videoContainer');
+            videoContainer.addEventListener('touchstart', handleTouchStart);
+            videoContainer.addEventListener('touchmove', handleTouchMove, { passive: false }); // يجب أن يكون false لمنع السلوك الافتراضي
+            videoContainer.addEventListener('touchend', handleTouchEnd);
         }
 
-        // معالجة تسجيل الدخول
+        // --- وظائف التحكم في اللمس (Swipe) ---
+        
+        function handleTouchStart(e) {
+            if (isFullscreen && e.touches.length === 1) { // فقط عند لمسة واحدة
+                startX = e.touches[0].clientX;
+                isSwiping = true;
+            }
+        }
+
+        function handleTouchMove(e) {
+            if (!isFullscreen || !isSwiping) return;
+
+            const currentX = e.touches[0].clientX;
+            const diffX = currentX - startX;
+            const videoEl = document.getElementById('videoContainer');
+            
+            // منع السلوك الافتراضي إذا كانت الحركة أفقية كبيرة (لمنع التمرير العادي)
+            if (Math.abs(diffX) > 10) {
+                e.preventDefault();
+            }
+            
+            // إذا كنا نظهر الدردشة المصغرة، يمكننا هنا تحريك الفيديو مع الإصبع (للحصول على تأثير سحب سلس)
+            // نكتفي بالتحريك النهائي لتجنب التعقيد في هذه المرحلة.
+        }
+
+        function handleTouchEnd(e) {
+            if (!isFullscreen || !isSwiping) return;
+            
+            const endX = e.changedTouches[0].clientX;
+            const diffX = endX - startX;
+            isSwiping = false;
+
+            const isCompactChatVisible = !document.getElementById('compactChat').classList.contains('-translate-x-full');
+
+            // التمرير لليمين لفتح الدردشة (فقط إذا كانت مخفية)
+            if (diffX > swipeThreshold && !isCompactChatVisible) {
+                showCompactChat();
+            } 
+            // التمرير لليسار لإغلاق الدردشة (فقط إذا كانت مرئية)
+            else if (diffX < -swipeThreshold && isCompactChatVisible) {
+                hideCompactChat();
+            }
+        }
+        
+        function showCompactChat() {
+            if (!isFullscreen) return;
+            const chatEl = document.getElementById('compactChat');
+            const videoEl = document.getElementById('videoContainer');
+            
+            chatEl.classList.remove('hidden', '-translate-x-full');
+            
+            // تحريك الفيديو إلى اليمين بمقدار عرض الدردشة المصغرة
+            videoEl.style.transform = `translateX(${COMPACT_CHAT_WIDTH}px)`; 
+            
+            // إظهار الدردشة المصغرة
+            chatEl.classList.remove('-translate-x-full');
+            document.body.classList.add('overflow-hidden'); // لمنع التمرير العشوائي
+        }
+
+        function hideCompactChat() {
+            const chatEl = document.getElementById('compactChat');
+            const videoEl = document.getElementById('videoContainer');
+
+            // إعادة الفيديو لوضعه الأصلي
+            videoEl.style.transform = `translateX(0)`;
+            
+            // إخفاء الدردشة المصغرة
+            chatEl.classList.add('-translate-x-full');
+            document.body.classList.remove('overflow-hidden'); 
+            
+            // إخفائها بالكامل بعد انتهاء الانتقال (300ms)
+            setTimeout(() => {
+                chatEl.classList.add('hidden');
+            }, 300);
+        }
+
+        function sendCompactMessage() {
+            const input = document.getElementById('compactMessageInput');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            // نستخدم نفس دالة الإرسال الرئيسية
+            document.getElementById('messageInput').value = message;
+            sendMessage(); 
+            input.value = ''; // مسح الإدخال
+        }
+
+
+        // --- معالجة تسجيل الدخول ---
         async function handleLogin() {
             const name = document.getElementById('userName').value.trim();
             if (!name) {
@@ -675,7 +810,21 @@
             video.onpause = null;
             video.onplay = null;
             video.onseeked = null;
-            video.ontimeupdate = null; // نستخدم timeupdate للمضيف فقط
+            
+            // مستمع للتأكد من تحميل الفيديو قبل محاولة تشغيله
+            video.addEventListener('loadedmetadata', () => {
+                 if (isHost) {
+                     // يمكننا تمكين التشغيل التلقائي هنا إذا أردنا أن يبدأ فوراً
+                     // video.play().catch(e => console.log('Autoplay failed:', e)); 
+                 }
+            });
+
+            // إضافة مستمع عند النقر لإظهار/إخفاء عناصر التحكم في غير وضع ملء الشاشة
+            video.addEventListener('click', (e) => {
+                 if (!isFullscreen) {
+                      e.target.controls = !e.target.controls; // تبديل عناصر التحكم الافتراضية
+                 }
+            });
 
             if (isHost) {
                 document.getElementById('hostControls').classList.remove('hidden');
@@ -826,7 +975,11 @@
             if (!isHost) return;
             const video = document.getElementById('mainVideo');
             if (video.paused) {
-                video.play();
+                // محاولة التشغيل، والتي قد تُرفض إذا لم يتم تحميل المورد بعد
+                video.play().catch(e => {
+                     console.error("Video play failed:", e);
+                     showToast('فشل التشغيل: قد يكون الفيديو غير جاهز أو غير مدعوم.');
+                });
             } else {
                 video.pause();
             }
@@ -865,17 +1018,20 @@
             try {
                 await addDoc(chatCollectionRef, messageData);
                 input.value = '';
+                document.getElementById('compactMessageInput').value = ''; // مسح الإدخال الآخر أيضاً
             } catch (error) {
                 console.error('فشل في إرسال الرسالة:', error);
                 showToast('فشل في إرسال الرسالة');
             }
         }
 
-        // تحديث رسائل الدردشة
+        // تحديث رسائل الدردشة (تحديث كلاً من شاشة الدردشة العادية والمصغرة)
         function updateChatMessages(messages) {
             const container = document.getElementById('chatMessages');
+            const compactContainer = document.getElementById('compactChatMessages');
             
             container.innerHTML = '';
+            compactContainer.innerHTML = '';
             
             messages.forEach(msg => {
                 const messageEl = document.createElement('div');
@@ -885,11 +1041,14 @@
                     `<img src="${msg.userAvatar}" class="w-8 h-8 rounded-full object-cover">` :
                     `<div class="w-8 h-8 rounded-full avatar-pattern flex items-center justify-center text-sm font-bold">👤</div>`;
                 
+                const hostIndicator = msg.userId === roomHostIdCache ? 
+                    '<span class="text-xs bg-pink-600 px-1 py-0.5 rounded-full mr-1">المنشئ</span>' : '';
+
                 messageEl.innerHTML = `
                     <div class="flex-shrink-0">${avatarHtml}</div>
                     <div class="flex-1 min-w-0">
                         <div class="bg-white/10 rounded-2xl px-4 py-2 break-words">
-                            <div class="text-sm text-purple-300 font-semibold mb-1">${msg.userName}</div>
+                            <div class="text-sm text-purple-300 font-semibold mb-1">${msg.userName} ${hostIndicator}</div>
                             <div class="text-sm">${msg.message}</div>
                         </div>
                         <div class="text-xs text-gray-400 mt-1">${formatTime(msg.timestamp)}</div>
@@ -897,11 +1056,16 @@
                 `;
                 
                 container.appendChild(messageEl);
+                compactContainer.appendChild(messageEl.cloneNode(true)); // إضافة نسخة للدردشة المصغرة
             });
             
-            // التمرير للأسفل فقط إذا كان المستخدم قريباً من الأسفل
+            // التمرير للأسفل في الدردشة العادية
             if (container.scrollHeight - container.clientHeight < container.scrollTop + 100) {
                  container.scrollTop = container.scrollHeight;
+            }
+            // التمرير للأسفل في الدردشة المصغرة
+            if (compactContainer.scrollHeight - compactContainer.clientHeight < compactContainer.scrollTop + 100) {
+                 compactContainer.scrollTop = compactContainer.scrollHeight;
             }
         }
         
@@ -951,7 +1115,6 @@
         // تبديل القائمة
         function toggleMenu() {
             const overlay = document.getElementById('menuOverlay');
-            // السلوك المطلوب هو الاختفاء عند الضغط مرة أخرى، وهذا ما تفعله دالة toggleMenu
             if (overlay.classList.contains('hidden')) {
                 showMenu();
             } else {
@@ -984,29 +1147,40 @@
             const chatToggleBtn = document.getElementById('chatToggleBtn');
             
             if (!isFullscreen) {
+                // دخول وضع ملء الشاشة
                 videoContainer.classList.add('fullscreen-video', 'z-[1000]');
                 document.body.classList.add('overflow-hidden');
                 
-                // إظهار زر تبديل الدردشة
+                // إظهار زر تبديل الدردشة (الافتراضية في هذا الوضع)
                 chatToggleBtn.classList.remove('hidden');
                 
-                // وضع الدردشة في وضع ملء الشاشة المصغر إذا كانت مرئية
+                // وضع الدردشة السفلية في وضع ملء الشاشة المصغر إذا كانت مرئية
                 if (chatVisible) {
                     chatContainer.classList.add('fullscreen-chat');
-                    chatContainer.classList.remove('hidden'); // تأكد من إظهارها في وضع الشاشة الكاملة إذا كانت مرئية
+                    chatContainer.classList.remove('hidden');
                 } else {
                     chatContainer.classList.add('hidden');
                 }
 
+                // إخفاء الدردشة المصغرة لضمان وضع البداية الصحيح
+                hideCompactChat(); 
+
                 isFullscreen = true;
             } else {
+                // الخروج من وضع ملء الشاشة
                 videoContainer.classList.remove('fullscreen-video', 'z-[1000]');
                 document.body.classList.remove('overflow-hidden');
                 chatContainer.classList.remove('fullscreen-chat');
                 chatToggleBtn.classList.add('hidden');
                 
-                // لا نحتاج لـ .remove('hidden') هنا لأننا لا نخفيها إلا إذا طلب المستخدم الإخفاء (في toggleChatVisibility)
+                // التأكد من إخفاء الدردشة المصغرة عند الخروج
+                hideCompactChat();
                 
+                // إعادة إظهار الدردشة السفلية (الافتراضية)
+                if (chatVisible) {
+                    chatContainer.classList.remove('hidden');
+                }
+
                 isFullscreen = false;
             }
         }
@@ -1167,6 +1341,7 @@
             // مسح مصدر الفيديو
             document.getElementById('mainVideo').src = '';
             document.getElementById('chatContainer').classList.remove('hidden'); // إعادة إظهار الدردشة إذا كانت مخفية
+            hideCompactChat(); // إخفاء الدردشة المصغرة
 
             if (clearUrl) {
                  window.history.pushState({}, '', window.location.origin);
