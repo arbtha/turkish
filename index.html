@@ -11,14 +11,14 @@
     // استيراد جميع وظائف Firebase اللازمة
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, orderBy, where, addDoc, deleteDoc, runTransaction, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"; // تم إضافة getDocs هنا
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, orderBy, where, addDoc, deleteDoc, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
     import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     
     // تعريف المتغيرات العامة لتمكين استخدامها في جميع أنحاء الكود
     window.firebase = {
         initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, updateProfile,
-        getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, orderBy, where, addDoc, deleteDoc, runTransaction, getDocs, // تم إضافة getDocs هنا
+        getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, orderBy, where, addDoc, deleteDoc, runTransaction,
         getStorage, ref, uploadBytes, getDownloadURL, deleteObject, uploadBytesResumable, setLogLevel
     };
   </script>
@@ -65,6 +65,7 @@
             display: flex; 
             justify-content: center;
             align-items: center;
+            /* يتم التحكم بالتحويل عبر JS عند إظهار الدردشة المصغرة */
         }
 
         .fullscreen-video > video {
@@ -73,6 +74,7 @@
         }
         
         /* وضع الدردشة المصغر في ملء الشاشة */
+        /* هذا النمط يستخدم الآن للدردشة المصغرة في وضع ملء الشاشة (Swipe Chat) */
         .fullscreen-chat-swipe { 
             position: fixed;
             bottom: 0;
@@ -85,6 +87,14 @@
             border-top-right-radius: 1rem;
         }
         
+        /* حجم الدردشة الثابتة في الوضع العادي (للتأكد من أن Video Container يأخذ المساحة الصحيحة) */
+        /* يرجى تغيير هذا إذا غيرت ارتفاع div#chatMessages أو padding حوله */
+        .chat-fixed-height {
+             /* 64 (h-64) + 16 (p-4 top) + 16 (p-4 bottom) + 16 (input height approx) + 1 (border) = 217px تقريبا. سنستخدم قيمة آمنة */
+             height: 250px; 
+             /* تم تعديل هذا الارتفاع ليتناسب مع pb-[250px] في roomScreen */
+        }
+
         /* زر إخفاء الدردشة في وضع ملء الشاشة */
         .chat-toggle-btn {
             position: absolute;
@@ -133,7 +143,7 @@
      <div id="progressMessage" class="text-center text-sm text-gray-300 hidden"></div>
     </div>
    </div>
-  </div><div id="roomScreen" class="hidden min-h-full flex flex-col">
+  </div><div id="roomScreen" class="hidden min-h-full flex flex-col pb-[250px]">
     <div id="compactChat" class="fixed top-0 bottom-0 left-0 w-80 bg-black/80 backdrop-blur-lg z-[1001] transition-transform duration-300 ease-in-out transform -translate-x-full hidden md:w-96">
         <div class="h-full flex flex-col">
             <div class="p-4 flex justify-between items-center border-b border-white/10">
@@ -172,38 +182,30 @@
      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
      </svg>
     </button>
-   </div>
-   
-   <div id="videoContainer" class="flex-1 bg-black relative transition-transform duration-300 ease-in-out p-4">
-        <div id="videoWrapper" class="relative w-full" style="padding-top: 56.25%;">
-            <video id="mainVideo" class="absolute top-0 left-0 w-full h-full object-cover" crossorigin="anonymous" playsinline></video>
-        </div>
-        
-        <button id="chatToggleBtn" class="chat-toggle-btn p-2 rounded-full hidden" aria-label="Toggle Chat">
-         <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.505A9.76 9.76 0 0112 4c4.97 0 9 3.582 9 8z" />
-         </svg></button>
+   </div><div id="videoContainer" class="flex-1 bg-black relative transition-transform duration-300 ease-in-out">
+    <video id="mainVideo" class="w-full h-full object-contain" crossorigin="anonymous" playsinline></video><button id="chatToggleBtn" class="chat-toggle-btn p-2 rounded-full hidden" aria-label="Toggle Chat">
+     <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.505A9.76 9.76 0 0112 4c4.97 0 9 3.582 9 8z" />
+     </svg></button><div id="hostControls" class="absolute bottom-4 left-0 right-0 p-4 rounded-t-lg hidden flex justify-center">
+     <div class="flex space-x-4 space-x-reverse bg-black/50 p-3 rounded-full">
          
-         <div id="hostControls" class="absolute bottom-4 left-0 right-0 p-4 rounded-t-lg hidden flex justify-center">
-             <div class="flex space-x-4 space-x-reverse bg-black/50 p-3 rounded-full">
-                 
-                 <button id="rewindBtn" class="bg-white/20 hover:bg-white/30 p-3 rounded-full transition-colors" title="تأخير 10 ثواني">
-                   <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 5V2L8 6l4 4V7c3.31 0 6 2.69 6 6s-2.69 6-6 6a5.996 5.996 0 01-5.12-2.88L3.46 17.5c2.11 3.59 5.86 6 10.04 6 6.07 0 11-4.93 11-11S18.07 2 12 2z"/></svg>
-                </button>
-                 
-                <button id="playPauseBtn" class="bg-white/20 hover:bg-white/30 p-3 rounded-full transition-colors">
-                   <svg class="w-6 h-6" fill="currentColor" viewbox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                </button>
-                 
-                <button id="forwardBtn" class="bg-white/20 hover:bg-white/30 p-3 rounded-full transition-colors" title="تقديم 10 ثواني">
-                   <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 19V22l4-4-4-4v3c-3.31 0-6-2.69-6-6s2.69-6 6-6a5.996 5.996 0 015.12 2.88L20.54 6.5c-2.11-3.59-5.86-6-10.04-6-6.07 0-11 4.93-11 11s4.93 11 11 11z"/></svg>
-                </button>
-             </div>
-         </div>
+         <button id="rewindBtn" class="bg-white/20 hover:bg-white/30 p-3 rounded-full transition-colors" title="تأخير 10 ثواني">
+           <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 5V2L8 6l4 4V7c3.31 0 6 2.69 6 6s-2.69 6-6 6a5.996 5.996 0 01-5.12-2.88L3.46 17.5c2.11 3.59 5.86 6 10.04 6 6.07 0 11-4.93 11-11S18.07 2 12 2z"/></svg>
+        </button>
+         
+        <button id="playPauseBtn" class="bg-white/20 hover:bg-white/30 p-3 rounded-full transition-colors">
+           <svg class="w-6 h-6" fill="currentColor" viewbox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+        </button>
+         
+        <button id="forwardBtn" class="bg-white/20 hover:bg-white/30 p-3 rounded-full transition-colors" title="تقديم 10 ثواني">
+           <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 19V22l4-4-4-4v3c-3.31 0-6-2.69-6-6s2.69-6 6-6a5.996 5.996 0 015.12 2.88L20.54 6.5c-2.11-3.59-5.86-6-10.04-6-6.07 0-11 4.93-11 11s4.93 11 11 11z"/></svg>
+        </button>
+     </div>
+    </div>
    </div>
   </div>
   
-  <div id="chatContainer" class="fixed inset-x-0 bottom-0 bg-black/30 backdrop-blur-lg border-t border-white/10 z-20 hidden flex flex-col max-h-[80vh]">
-    <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+  <div id="chatContainer" class="fixed inset-x-0 bottom-0 bg-black/30 backdrop-blur-lg border-t border-white/10 z-20 hidden">
+    <div id="chatMessages" class="h-64 overflow-y-auto p-4 space-y-3"></div>
     <div class="p-4 border-t border-white/10">
      <div class="flex space-x-2 space-x-reverse"><input type="text" id="messageInput" class="flex-1 px-4 py-2 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-gray-400" placeholder="اكتب رسالة..."> <button id="sendBtn" class="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-xl font-semibold transition-colors">إرسال</button>
      </div>
@@ -217,12 +219,9 @@
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
     </div>
-    <div class="space-y-2">
-        <button id="copyLinkBtn" class="w-full text-right p-3 hover:bg-white/10 rounded-lg transition-colors">نسخ رابط الغرفة</button> 
-        <button id="showVideosBtn" class="w-full text-right p-3 hover:bg-white/10 rounded-lg transition-colors">الفيديوهات المحملة</button> <button id="changeNameBtn" class="w-full text-right p-3 hover:bg-white/10 rounded-lg transition-colors">تغيير الاسم</button> 
-        <button id="changeAvatarBtn" class="w-full text-right p-3 hover:bg-white/10 rounded-lg transition-colors">تغيير الصورة</button>
-        <button id="deleteRoomBtn" class="w-full text-right p-3 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors hidden">حذف الغرفة</button>
-        <button id="leaveRoomBtn" class="w-full text-right p-3 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors">الخروج من الغرفة</button>
+    <div class="space-y-2"><button id="copyLinkBtn" class="w-full text-right p-3 hover:bg-white/10 rounded-lg transition-colors">نسخ رابط الغرفة</button> <button id="changeNameBtn" class="w-full text-right p-3 hover:bg-white/10 rounded-lg transition-colors">تغيير الاسم</button> <button id="changeAvatarBtn" class="w-full text-right p-3 hover:bg-white/10 rounded-lg transition-colors">تغيير الصورة</button>
+     <button id="deleteRoomBtn" class="w-full text-right p-3 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors hidden">حذف الغرفة</button>
+     <button id="leaveRoomBtn" class="w-full text-right p-3 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors">الخروج من الغرفة</button>
     </div>
    </div>
   </div><div id="changeNameModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -258,29 +257,11 @@
     </div>
   </div>
   
-  <div id="videosModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-    <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 w-full max-w-sm max-h-[80vh] overflow-y-auto">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-xl font-bold">الفيديوهات المحملة</h3>
-            <button id="closeVideosBtn" class="p-1 rounded-full hover:bg-white/20 transition-colors">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-        </div>
-        <div id="videosList" class="space-y-4">
-            </div>
-        
-        <div class="mt-6">
-            <input type="file" id="additionalVideoInput" accept="video/*" class="hidden">
-            <button id="addVideoBtn" class="w-full bg-green-600 hover:bg-green-700 py-3 rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed">إضافة فيديو</button>
-        </div>
-    </div>
-  </div>
-
   <script type="module">
         // استيراد وظائف Firebase من النطاق العام بعد التحميل
         const { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, 
                 getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, orderBy, where, addDoc, deleteDoc, 
-                getStorage, ref, uploadBytes, getDownloadURL, deleteObject, uploadBytesResumable, setLogLevel, updateProfile, getDocs } = window.firebase;
+                getStorage, ref, uploadBytes, getDownloadURL, deleteObject, uploadBytesResumable, setLogLevel, updateProfile } = window.firebase;
         
         // المتغيرات العامة للحالة و Firebase
         let currentUser = null;
@@ -290,15 +271,13 @@
         let chatVisible = true;
         let videoFile = null;
         let videoUrl = null;
-        let roomHostIdCache = null; 
-        let currentVideoId = null; // جديد: ID الفيديو الذي يتم تشغيله حاليًا
-        let currentUploads = {}; // جديد: لتتبع عمليات الرفع الجارية وشريط التقدم
+        let roomHostIdCache = null; // لتخزين ID المضيف للغرفة
 
         // حالة السحب (Swipe) الجديدة
         let startX = 0;
         let isSwiping = false;
         const swipeThreshold = 50; // بكسل لتفعيل التمرير
-        const COMPACT_CHAT_WIDTH = 320; 
+        const COMPACT_CHAT_WIDTH = 320; // يتطابق مع w-80 في Tailwind
 
         let db;
         let auth;
@@ -430,25 +409,20 @@
             }
         }
 
-        // تحديث عرض الصورة في شاشة تسجيل الدخول - تم تعديلها
+        // تحديث عرض الصورة في شاشة تسجيل الدخول
         function updatePreviewAvatar(avatarUrl) {
             const previewEl = document.getElementById('avatarPreview');
-            // إعادة ضبط فئة النمط الافتراضي
-            previewEl.className = 'w-20 h-20 rounded-full mx-auto mb-4 avatar-pattern flex items-center justify-center text-2xl font-bold';
-            
             if (avatarUrl && avatarUrl.startsWith('data:')) { // إذا كان URL مؤقت (من file reader)
                 previewEl.innerHTML = `<img src="${avatarUrl}" class="w-full h-full object-cover rounded-full">`;
-                previewEl.classList.remove('avatar-pattern'); // إزالة النمط عند وجود صورة
             } else if (avatarUrl) { // إذا كان URL دائم (من Firebase Storage)
                  previewEl.innerHTML = `<img src="${avatarUrl}" class="w-full h-full object-cover rounded-full">`;
-                 previewEl.classList.remove('avatar-pattern'); // إزالة النمط عند وجود صورة
             } else {
                 previewEl.innerHTML = '👤';
-                previewEl.classList.add('avatar-pattern'); // إضافة النمط عند عدم وجود صورة
+                previewEl.className = 'w-20 h-20 rounded-full mx-auto mb-4 avatar-pattern flex items-center justify-center text-2xl font-bold';
             }
         }
 
-        // إعداد مستمعي الأحداث (تم إضافة مستمعات الفيديوهات المحملة)
+        // إعداد مستمعي الأحداث
         function setupEventListeners() {
             // شاشة تسجيل الدخول
             document.getElementById('continueBtn').addEventListener('click', handleLogin);
@@ -461,16 +435,17 @@
             // شاشة الغرفة
             document.getElementById('menuBtn').addEventListener('click', toggleMenu);
             document.getElementById('openParticipantsBtn').addEventListener('click', showParticipantsModal); // جديد: زر قائمة المشاركين
+            // تم إخفاء زر ملء الشاشة بناءً على طلب المستخدم
+            // document.getElementById('fullscreenBtn').addEventListener('click', toggleFullscreen);
             document.getElementById('chatToggleBtn').addEventListener('click', toggleChatVisibility);
             document.getElementById('sendBtn').addEventListener('click', sendMessage);
             document.getElementById('messageInput').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') sendMessage();
             });
             
-            // قائمة الإعدادات (تم إضافة زر الفيديوهات)
+            // قائمة الإعدادات
             document.getElementById('closeMenuBtn').addEventListener('click', hideMenu); // جديد: زر إغلاق القائمة
             document.getElementById('copyLinkBtn').addEventListener('click', copyRoomLink);
-            document.getElementById('showVideosBtn').addEventListener('click', showVideosModal); // جديد: زر الفيديوهات المحملة
             document.getElementById('changeNameBtn').addEventListener('click', showChangeNameModal);
             document.getElementById('changeAvatarBtn').addEventListener('click', showChangeAvatarModal);
             document.getElementById('deleteRoomBtn').addEventListener('click', handleDeleteRoom); // زر حذف الغرفة
@@ -488,11 +463,6 @@
             // نافذة المشاركين
             document.getElementById('closeParticipantsBtn').addEventListener('click', hideParticipantsModal);
             
-            // نافذة الفيديوهات المحملة (الجديدة)
-            document.getElementById('closeVideosBtn').addEventListener('click', hideVideosModal);
-            document.getElementById('addVideoBtn').addEventListener('click', () => document.getElementById('additionalVideoInput').click());
-            document.getElementById('additionalVideoInput').addEventListener('change', handleAdditionalVideoUpload);
-
             // الدردشة المصغرة (Swipe Chat)
             document.getElementById('closeCompactChatBtn').addEventListener('click', hideCompactChat);
             document.getElementById('sendCompactBtn').addEventListener('click', sendCompactMessage);
@@ -503,20 +473,20 @@
 
             // التحكم في الفيديو للمنشئ
             document.getElementById('playPauseBtn').addEventListener('click', togglePlayPause);
-            document.getElementById('rewindBtn').addEventListener('click', () => seekVideo(-10)); 
-            document.getElementById('forwardBtn').addEventListener('click', () => seekVideo(10)); 
+            document.getElementById('rewindBtn').addEventListener('click', () => seekVideo(-10)); // جديد: تأخير 10 ثواني
+            document.getElementById('forwardBtn').addEventListener('click', () => seekVideo(10)); // جديد: تقديم 10 ثواني
             
             // إضافة مستمعات اللمس لحركة السحب (Swipe)
             const videoContainer = document.getElementById('videoContainer');
             videoContainer.addEventListener('touchstart', handleTouchStart);
-            videoContainer.addEventListener('touchmove', handleTouchMove, { passive: false }); 
+            videoContainer.addEventListener('touchmove', handleTouchMove, { passive: false }); // يجب أن يكون false لمنع السلوك الافتراضي
             videoContainer.addEventListener('touchend', handleTouchEnd);
         }
 
         // --- وظائف التحكم في اللمس (Swipe) ---
         
         function handleTouchStart(e) {
-            if (isFullscreen && e.touches.length === 1) { 
+            if (isFullscreen && e.touches.length === 1) { // فقط عند لمسة واحدة
                 startX = e.touches[0].clientX;
                 isSwiping = true;
             }
@@ -525,12 +495,17 @@
         function handleTouchMove(e) {
             if (!isFullscreen || !isSwiping) return;
 
-            const diffX = e.touches[0].clientX - startX;
+            const currentX = e.touches[0].clientX;
+            const diffX = currentX - startX;
+            const videoEl = document.getElementById('videoContainer');
             
             // منع السلوك الافتراضي إذا كانت الحركة أفقية كبيرة (لمنع التمرير العادي)
             if (Math.abs(diffX) > 10) {
                 e.preventDefault();
             }
+            
+            // إذا كنا نظهر الدردشة المصغرة، يمكننا هنا تحريك الفيديو مع الإصبع (للحصول على تأثير سحب سلس)
+            // نكتفي بالتحريك النهائي لتجنب التعقيد في هذه المرحلة.
         }
 
         function handleTouchEnd(e) {
@@ -557,16 +532,14 @@
             const chatEl = document.getElementById('compactChat');
             const videoEl = document.getElementById('videoContainer');
             
-            chatEl.classList.remove('hidden');
+            chatEl.classList.remove('hidden', '-translate-x-full');
             
             // تحريك الفيديو إلى اليمين بمقدار عرض الدردشة المصغرة
             videoEl.style.transform = `translateX(${COMPACT_CHAT_WIDTH}px)`; 
             
             // إظهار الدردشة المصغرة
-            setTimeout(() => {
-                chatEl.classList.remove('-translate-x-full');
-            }, 10);
-            document.body.classList.add('overflow-hidden'); 
+            chatEl.classList.remove('-translate-x-full');
+            document.body.classList.add('overflow-hidden'); // لمنع التمرير العشوائي
         }
 
         function hideCompactChat() {
@@ -578,7 +551,7 @@
             
             // إخفاء الدردشة المصغرة
             chatEl.classList.add('-translate-x-full');
-            document.body.classList.remove('overflow-hidden');
+            document.body.classList.remove('overflow-hidden'); 
             
             // إخفائها بالكامل بعد انتهاء الانتقال (300ms)
             setTimeout(() => {
@@ -590,127 +563,55 @@
             const input = document.getElementById('compactMessageInput');
             const message = input.value.trim();
             if (!message) return;
-
+            
             // نستخدم نفس دالة الإرسال الرئيسية
             document.getElementById('messageInput').value = message;
-            sendMessage();
+            sendMessage(); 
             input.value = ''; // مسح الإدخال
         }
 
 
-        // --- وظائف عامة مساعدة ---
-
-        function showToast(message) {
-            const toastContainer = document.querySelector('.toast-container');
-            if (!toastContainer) {
-                const container = document.createElement('div');
-                container.className = 'toast-container fixed top-4 inset-x-0 flex justify-center z-[5000] space-x-2 space-x-reverse pointer-events-none';
-                document.body.appendChild(container);
-            }
-            
-            const toast = document.createElement('div');
-            toast.className = 'bg-purple-600 text-white px-6 py-3 rounded-xl shadow-xl transition-opacity duration-300 opacity-0 transform translate-y-4 max-w-xs text-center pointer-events-auto';
-            toast.textContent = message;
-
-            document.querySelector('.toast-container').appendChild(toast);
-
-            // Show animation
-            setTimeout(() => {
-                toast.classList.remove('opacity-0', 'translate-y-4');
-                toast.classList.add('opacity-100', 'translate-y-0');
-            }, 10);
-
-            // Hide animation
-            setTimeout(() => {
-                toast.classList.remove('opacity-100', 'translate-y-0');
-                toast.classList.add('opacity-0', 'translate-y-4');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-
-        function generateId(length = 20) {
-            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-            let result = '';
-            for (let i = 0; i < length; i++) {
-                result += characters.charAt(Math.floor(Math.random() * characters.length));
-            }
-            return result;
-        }
-
-        function showScreen(screenId) {
-            const screens = ['loginScreen', 'createRoomScreen', 'roomScreen'];
-            screens.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    if (id === screenId) {
-                        el.classList.remove('hidden');
-                        el.classList.add('flex');
-                    } else {
-                        el.classList.add('hidden');
-                        el.classList.remove('flex');
-                    }
-                }
-            });
-        }
-
-        function showLoginScreen() {
-            showScreen('loginScreen');
-        }
-
-        function showCreateRoomScreen() {
-            showScreen('createRoomScreen');
-        }
-
-        function showRoomScreen(roomId, videoUrl, isHost) {
-            showScreen('roomScreen');
-            document.getElementById('mainVideo').src = videoUrl;
-            document.getElementById('mainVideo').load(); // لبدء تحميل الفيديو
-
-            // تحديث واجهة المستخدم بناءً على حالة المضيف
-            if (isHost) {
-                document.getElementById('hostControls').classList.remove('hidden');
-                document.getElementById('hostControls').classList.add('flex');
-                document.getElementById('deleteRoomBtn').classList.remove('hidden');
-            } else {
-                document.getElementById('hostControls').classList.add('hidden');
-                document.getElementById('hostControls').classList.remove('flex');
-                document.getElementById('deleteRoomBtn').classList.add('hidden');
-            }
-
-            // إخفاء مربع الدردشة أسفل الفيديو (نعتمد على الدردشة المصغرة الآن)
-            document.getElementById('chatContainer').classList.add('hidden');
-            
-            updateUserAvatar(); // تحديث الصورة في شاشة الغرفة
-        }
-        
-        // تم حذف دالة handleResize
-        // window.addEventListener('resize', handleResize);
-
-
-        // --- معالجة تسجيل الدخول / البروفايل ---
-
-        function handleLogin() {
+        // --- معالجة تسجيل الدخول ---
+        async function handleLogin() {
             const name = document.getElementById('userName').value.trim();
             if (!name) {
-                showToast('الرجاء إدخال اسمك.');
+                showToast('يرجى إدخال الاسم');
                 return;
             }
+
+            // إذا كان المستخدم قد اختار ملف صورة، يجب رفعها أولاً
+            const avatarInputFile = document.getElementById('avatarInput').files[0];
+            let finalAvatarUrl = currentUser.avatar;
+
+            if (avatarInputFile) {
+                finalAvatarUrl = await uploadAvatarFile(avatarInputFile);
+            } else if (!currentUser.avatar) {
+                 // إذا لم يتم اختيار ملف ولم يكن هناك صورة سابقة، نستخدم الصورة الافتراضية
+                finalAvatarUrl = null;
+            }
             
-            saveUserProfile({ name: name }).then(() => {
-                const urlParams = new URLSearchParams(window.location.search);
-                const roomIdFromUrl = urlParams.get('room');
-                
-                if (roomIdFromUrl) {
-                    attemptJoinRoom(roomIdFromUrl);
-                } else {
-                    showCreateRoomScreen();
-                }
-            }).catch(e => {
-                console.error("Login failed:", e);
-                showToast('فشل في حفظ الاسم والمتابعة.');
+            await saveUserProfile({ 
+                name: name,
+                avatar: finalAvatarUrl
             });
+
+            // تحديث حالة المصادقة (مهم للتحقق من أننا جاهزون للإنشاء/الانضمام)
+            if (auth.currentUser) {
+                 // بعد تسجيل الدخول بنجاح، نتحقق مرة أخرى من رابط الدعوة
+                 const urlParams = new URLSearchParams(window.location.search);
+                 const roomIdFromUrl = urlParams.get('room');
+                 
+                 if (roomIdFromUrl) {
+                      await attemptJoinRoom(roomIdFromUrl);
+                 } else {
+                      showCreateRoomScreen();
+                 }
+            } else {
+                 showToast('يرجى الانتظار حتى تكتمل المصادقة قبل المتابعة.');
+            }
         }
-        
+
+        // معالجة رفع الصورة الشخصية (Pre-Login)
         function handleAvatarUpload(event) {
             const file = event.target.files[0];
             if (file) {
@@ -721,36 +622,618 @@
                 reader.readAsDataURL(file);
             }
         }
-        
-        function handleNewAvatarUpload(event) {
+
+        // معالجة رفع الفيديو
+        function handleVideoUpload(event) {
             const file = event.target.files[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    // عرض الصورة الجديدة بشكل مؤقت في الـ modal
-                    // (لا يوجد عرض مباشر للصورة الجديدة في هذا الكود، يمكن إضافته هنا إذا لزم الأمر)
-                    // لكن دالة saveAvatar ستقوم بالرفع الفعلي والتحديث
-                };
-                reader.readAsDataURL(file);
+                videoFile = file;
+                document.getElementById('createRoomBtn').disabled = false;
+                showToast(`تم اختيار الملف: ${file.name}`); // *** إشعار عند اختيار الملف بنجاح ***
             }
         }
 
-        async function uploadAvatarFile(file) {
-            if (!file) return null;
-
-            const avatarPath = `artifacts/${appId}/public/data/avatars/${userId}/${file.name}`;
-            const storageRef = ref(storage, avatarPath);
+        // إنشاء الغرفة
+        async function createRoom() {
+            const authUser = auth.currentUser; 
+            
+            if (!videoFile || !userId || !currentUser || !currentUser.name || !authUser) {
+                console.error("Authentication/State Check Failed. userId:", userId, "currentUser:", currentUser, "AuthUser:", authUser);
+                showToast('يرجى اختيار ملف فيديو والانتظار حتى يتم تسجيل الدخول بالكامل.');
+                return;
+            }
+            
+            const roomId = generateId();
+            currentRoomId = roomId;
+            isHost = true;
+            
+            const createBtn = document.getElementById('createRoomBtn');
+            const progressMsg = document.getElementById('progressMessage');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const uploadPercentage = document.getElementById('uploadPercentage');
+            
+            createBtn.disabled = true;
+            progressMsg.textContent = 'جاري رفع الفيديو وإنشاء الغرفة... قد يستغرق الأمر بعض الوقت.';
+            progressMsg.classList.remove('hidden');
+            progressContainer.classList.remove('hidden'); // إظهار واجهة التقدم
+            progressBar.style.width = '0%';
+            uploadPercentage.textContent = '0%';
 
             try {
-                await uploadBytes(storageRef, file);
-                return await getDownloadURL(storageRef);
+                // 1. Upload video to Storage - (Path is correct for public data access by authenticated users)
+                const videoPath = `artifacts/${appId}/public/data/videos/rooms/${roomId}/${videoFile.name}`;
+                const storageRef = ref(storage, videoPath);
+                
+                // استخدام uploadBytesResumable لتمكين تتبع التقدم
+                const uploadTask = uploadBytesResumable(storageRef, videoFile);
+                
+                // تحديث شريط التقدم
+                await new Promise((resolve, reject) => {
+                    uploadTask.on('state_changed', 
+                        (snapshot) => {
+                            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                            progressBar.style.width = progress.toFixed(0) + '%';
+                            uploadPercentage.textContent = progress.toFixed(0) + '%';
+                            
+                            switch (snapshot.state) {
+                                case 'paused':
+                                    progressMsg.textContent = 'الرفع متوقف مؤقتاً';
+                                    break;
+                                case 'running':
+                                    progressMsg.textContent = 'جاري رفع الفيديو...';
+                                    break;
+                            }
+                        }, 
+                        (error) => {
+                            reject(error);
+                        }, 
+                        () => {
+                            // الرفع اكتمل
+                            resolve();
+                        }
+                    );
+                });
+                
+                const videoUrl = await getDownloadURL(uploadTask.snapshot.ref); // الحصول على الرابط بعد الاكتمال
+                
+                // 2. Create Room document in Firestore
+                const roomRef = doc(db, `/artifacts/${appId}/public/data/rooms/${roomId}`);
+                await setDoc(roomRef, {
+                    id: roomId,
+                    hostId: userId,
+                    videoUrl: videoUrl,
+                    videoPath: videoPath, // لحذفه لاحقاً
+                    status: ROOM_STATUS_ACTIVE,
+                    createdAt: Date.now(),
+                    name: currentUser.name // اسم المنشئ كاسم افتراضي للفعالية
+                });
+                
+                // 3. Create initial video state document
+                const stateRef = doc(db, `/artifacts/${appId}/public/data/rooms/${roomId}/state/main`);
+                await setDoc(stateRef, {
+                    currentTime: 0,
+                    isPlaying: false,
+                    lastUpdatedBy: userId,
+                    timestamp: Date.now()
+                });
+
+                // 4. Update presence and transition
+                await updateParticipantPresence(roomId); // تسجيل الحضور
+                window.history.pushState({}, '', `?room=${roomId}`);
+                showRoomScreen(roomId, videoUrl, true);
+                startRealtimeSync(roomId);
+                
             } catch (error) {
-                console.error("Failed to upload avatar:", error);
-                showToast('فشل في رفع الصورة.');
-                return null;
+                console.error('فشل في إنشاء الغرفة:', error);
+                // عرض رسالة الخطأ للمستخدم
+                if (error.code === 'storage/unauthorized') {
+                    showToast('فشل في رفع الفيديو: لا توجد صلاحيات. تأكد أنك مصادق وأن قواعد أمان Storage تسمح بالوصول للمسار العام.');
+                } else {
+                    showToast('فشل في إنشاء الغرفة أو تحميل الفيديو. (قد تكون مشكلة في الرفع)');
+                }
+            } finally {
+                createBtn.disabled = false;
+                progressMsg.classList.add('hidden');
+                progressContainer.classList.add('hidden'); // إخفاء واجهة التقدم
             }
         }
 
+        // محاولة الانضمام إلى غرفة (عند التحميل أو من الرابط)
+        async function attemptJoinRoom(roomId) {
+            const roomRef = doc(db, `/artifacts/${appId}/public/data/rooms/${roomId}`);
+            const roomSnap = await getDoc(roomRef);
+            
+            if (roomSnap.exists() && roomSnap.data().status === ROOM_STATUS_ACTIVE) {
+                const roomData = roomSnap.data();
+                currentRoomId = roomId;
+                isHost = roomData.hostId === userId;
+                roomHostIdCache = roomData.hostId; // تخزين ID المضيف
+                
+                showRoomScreen(roomId, roomData.videoUrl, isHost);
+                await updateParticipantPresence(roomId); // تسجيل الحضور
+                startRealtimeSync(roomId);
+                window.history.pushState({}, '', `?room=${roomId}`);
+            } else {
+                // إذا انتهت الغرفة، نعود لشاشة الإنشاء
+                showToast('الغرفة غير موجودة أو انتهت.');
+                window.history.pushState({}, '', window.location.origin);
+                showCreateRoomScreen();
+            }
+        }
+        
+        // تحديث حالة نشاط المستخدم في الغرفة (للمشاركين)
+        async function updateParticipantPresence(roomId = currentRoomId) {
+            if (!roomId || !userId || !currentUser || !currentUser.name) return;
+            
+            const participantRef = doc(db, `/artifacts/${appId}/public/data/rooms/${roomId}/participants/${userId}`);
+
+            const participantData = {
+                id: userId,
+                name: currentUser.name,
+                avatar: currentUser.avatar || null,
+                lastSeen: Date.now()
+            };
+            
+            try {
+                await setDoc(participantRef, participantData, { merge: true });
+            } catch (error) {
+                console.error('فشل في تحديث حالة المشارك:', error);
+            }
+        }
+        
+        // إزالة المشارك من الغرفة عند الخروج
+        async function removeParticipant(roomId = currentRoomId) {
+            if (!roomId || !userId) return;
+            const participantRef = doc(db, `/artifacts/${appId}/public/data/rooms/${roomId}/participants/${userId}`);
+            try {
+                await deleteDoc(participantRef);
+            } catch (error) {
+                console.error('فشل في إزالة المشارك:', error);
+            }
+        }
+
+        // إعداد مشغل الفيديو
+        function setupVideoPlayer(url, isHost) {
+            const video = document.getElementById('mainVideo');
+            video.src = url;
+            videoUrl = url; // حفظ URL لاستخدامه لاحقاً
+            
+            // إيقاف جميع المستمعات السابقة لتجنب التكرار
+            video.onpause = null;
+            video.onplay = null;
+            video.onseeked = null;
+            
+            // مستمع للتأكد من تحميل الفيديو قبل محاولة تشغيله
+            video.addEventListener('loadedmetadata', () => {
+                 if (isHost) {
+                     // يمكننا تمكين التشغيل التلقائي هنا إذا أردنا أن يبدأ فوراً
+                     // video.play().catch(e => console.log('Autoplay failed:', e)); 
+                 }
+            });
+
+            // إضافة مستمع عند النقر لإظهار/إخفاء عناصر التحكم في غير وضع ملء الشاشة
+            video.addEventListener('click', (e) => {
+                 if (!isFullscreen) {
+                      e.target.controls = !e.target.controls; // تبديل عناصر التحكم الافتراضية
+                 }
+            });
+
+            if (isHost) {
+                // عرض عناصر التحكم للمضيف عند التحميل الأولي (تُخفى لاحقاً عند التشغيل)
+                document.getElementById('hostControls').classList.remove('hidden'); 
+                
+                // إعادة تعيين المستمعات الخاصة بالمضيف
+                video.onpause = () => { broadcastVideoState('pause'); updatePlayPauseButton(false); };
+                video.onplay = () => { broadcastVideoState('play'); updatePlayPauseButton(true); };
+                // استخدام seeked لضمان استقرار وقت الفيديو قبل البث
+                video.onseeked = () => broadcastVideoState('seek');
+
+                // لضمان تزامن الوقت بشكل دوري إذا لم يكن هناك تفاعل (كل 5 ثواني)
+                const syncInterval = setInterval(() => {
+                    if (!video.paused && currentRoomId && isHost) {
+                         broadcastVideoState('sync');
+                    }
+                }, 5000); 
+                unsubscribes.push(() => clearInterval(syncInterval)); // دالة إلغاء الاشتراك للمؤقت
+
+            } else {
+                document.getElementById('hostControls').classList.add('hidden');
+            }
+            
+            // تهيئة زر التشغيل/الإيقاف بناءً على حالة الفيديو الأولية
+            updatePlayPauseButton(!video.paused);
+        }
+
+        // بث حالة الفيديو (للمنشئ فقط)
+        async function broadcastVideoState(action) {
+            if (!isHost || !currentRoomId) return;
+            
+            const video = document.getElementById('mainVideo');
+            const stateRef = doc(db, `/artifacts/${appId}/public/data/rooms/${currentRoomId}/state/main`);
+            
+            try {
+                await setDoc(stateRef, {
+                    currentTime: video.currentTime,
+                    isPlaying: !video.paused,
+                    lastUpdatedBy: userId,
+                    timestamp: Date.now()
+                }, { merge: true });
+            } catch (error) {
+                console.error('فشل في بث حالة الفيديو:', error);
+            }
+        }
+
+        // مزامنة حالة الفيديو (للمشاهدين)
+        function syncVideoState(state) {
+            const video = document.getElementById('mainVideo');
+            const syncThreshold = 1.5; // التفاوت المقبول بالثواني
+            const timeLag = (Date.now() - state.timestamp) / 1000;
+            const predictedTime = state.isPlaying ? (state.currentTime + timeLag) : state.currentTime;
+
+            // تحديث الوقت إذا كان التفاوت كبيراً
+            if (Math.abs(video.currentTime - predictedTime) > syncThreshold) {
+                video.currentTime = predictedTime;
+                showToast('تحديث المزامنة..');
+            }
+            
+            // تشغيل/إيقاف
+            // التعديل هنا لتمكين التشغيل التلقائي للمشاهدين بمجرد أن تكون حالة المضيف "قيد التشغيل"
+            if (state.isPlaying) { 
+                video.play().catch(e => console.log('Autoplay blocked:', e));
+            } else if (!state.isPlaying && !video.paused) {
+                video.pause();
+            }
+            
+            updatePlayPauseButton(state.isPlaying);
+        }
+
+        // بدء مزامنة الوقت الفعلي (Chat, Video State, Room Status, Participants)
+        function startRealtimeSync(roomId) {
+            // إلغاء أي اشتراكات سابقة
+            unsubscribes.forEach(unsub => unsub());
+            unsubscribes = [];
+
+            // 1. Video State Listener
+            const stateRef = doc(db, `/artifacts/${appId}/public/data/rooms/${roomId}/state/main`);
+            const unsubscribeState = onSnapshot(stateRef, (docSnap) => {
+                if (docSnap.exists() && !isHost) {
+                    syncVideoState(docSnap.data());
+                } else if (docSnap.exists() && isHost) {
+                    // المنشئ يستمع للحالة للتأكد من تحديث زر التشغيل/الإيقاف
+                    updatePlayPauseButton(docSnap.data().isPlaying);
+                }
+            });
+            unsubscribes.push(unsubscribeState);
+
+            // 2. Chat Messages Listener
+            const chatCollectionRef = collection(db, `/artifacts/${appId}/public/data/rooms/${roomId}/messages`);
+            const chatQuery = query(chatCollectionRef, orderBy('timestamp', 'asc')); 
+            
+            const unsubscribeChat = onSnapshot(chatQuery, (snapshot) => {
+                const messages = [];
+                snapshot.forEach(doc => messages.push(doc.data()));
+                updateChatMessages(messages);
+            });
+            unsubscribes.push(unsubscribeChat);
+            
+            // 3. Room Status Listener (لحذف الغرفة وتحديث المضيف)
+            const roomRef = doc(db, `/artifacts/${appId}/public/data/rooms/${roomId}`);
+            const unsubscribeRoom = onSnapshot(roomRef, (docSnap) => {
+                const roomData = docSnap.data();
+                if (!docSnap.exists() || roomData.status === ROOM_STATUS_ENDED) {
+                    showSessionEndedMessage(roomData?.name || 'الفعالية');
+                    leaveRoom(false); // لا تحذف الرابط
+                } else {
+                    roomHostIdCache = roomData.hostId; // تحديث ID المضيف
+                }
+            });
+            unsubscribes.push(unsubscribeRoom);
+            
+            // 4. Participants Listener (المشاركون)
+            const participantsCollectionRef = collection(db, `/artifacts/${appId}/public/data/rooms/${roomId}/participants`);
+            const participantsQuery = query(participantsCollectionRef);
+            
+            const unsubscribeParticipants = onSnapshot(participantsQuery, (snapshot) => {
+                const participants = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    // تصفية المستخدمين غير النشطين (اكثر من دقيقة) - ليس مثالياً ولكن يعمل للتبسيط
+                    if (Date.now() - data.lastSeen < 60000) { 
+                        participants.push(data);
+                    }
+                });
+                updateParticipantsList(participants);
+            });
+            unsubscribes.push(unsubscribeParticipants);
+            
+            // 5. تحديث حالة النشاط كل 30 ثانية
+            const presenceInterval = setInterval(() => updateParticipantPresence(roomId), 30000);
+            unsubscribes.push(() => clearInterval(presenceInterval));
+
+            // نضع هنا زر حذف الغرفة بناءً على دور المستخدم
+            updateMenuButtons();
+        }
+
+        // تحديث زر التشغيل/الإيقاف و **إخفاء عناصر التحكم الإضافية عند التشغيل**
+        function updatePlayPauseButton(isPlaying) {
+            const btn = document.getElementById('playPauseBtn');
+            const hostControls = document.getElementById('hostControls');
+            const video = document.getElementById('mainVideo');
+            
+            // إظهار/إخفاء عناصر التحكم الافتراضية للفيديو (لا يظهر عند المضيف)
+            video.controls = !isPlaying && !isHost;
+            
+            if (isPlaying) {
+                btn.innerHTML = '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>'; // Pause icon
+                // إخفاء الأزرار الإضافية عندما يكون الفيديو قيد التشغيل (بناءً على طلب المستخدم)
+                if(isHost) {
+                   hostControls.classList.add('hidden');
+                }
+            } else {
+                btn.innerHTML = '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>'; // Play icon
+                // إظهار الأزرار الإضافية عندما يكون الفيديو متوقفاً (للمضيف فقط)
+                if(isHost) {
+                   hostControls.classList.remove('hidden');
+                }
+            }
+        }
+
+        // تبديل تشغيل/إيقاف الفيديو (للمنشئ فقط)
+        function togglePlayPause() {
+            if (!isHost) return;
+            const video = document.getElementById('mainVideo');
+            if (video.paused) {
+                // عند التشغيل: تتم محاولة التشغيل، وسيتم إخفاء عناصر التحكم عبر مستمع onplay و دالة updatePlayPauseButton
+                video.play().catch(e => {
+                     console.error("Video play failed:", e);
+                     showToast('فشل التشغيل: قد يكون الفيديو غير جاهز أو غير مدعوم.');
+                });
+            } else {
+                // عند الإيقاف: تتم إشارة الإيقاف، وسيتم إظهار عناصر التحكم عبر مستمع onpause و دالة updatePlayPauseButton
+                video.pause();
+            }
+            // البث يتم عبر onplay/onpause مستمعات الفيديو
+        }
+        
+        // التقديم والتأخير في الفيديو (للمنشئ فقط)
+        function seekVideo(seconds) {
+            if (!isHost) return;
+            const video = document.getElementById('mainVideo');
+            video.currentTime += seconds;
+            broadcastVideoState('seek');
+            showToast(`${seconds > 0 ? 'تقديم' : 'تأخير'} ${Math.abs(seconds)} ثواني`);
+        }
+
+
+        // إرسال رسالة
+        async function sendMessage() {
+            if (!currentRoomId || !currentUser || !currentUser.name) return;
+            
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            const chatCollectionRef = collection(db, `/artifacts/${appId}/public/data/rooms/${currentRoomId}/messages`);
+
+            const messageData = {
+                userId: currentUser.id,
+                userName: currentUser.name,
+                userAvatar: currentUser.avatar,
+                message: message,
+                timestamp: Date.now()
+            };
+
+            try {
+                await addDoc(chatCollectionRef, messageData);
+                input.value = '';
+                document.getElementById('compactMessageInput').value = ''; // مسح الإدخال الآخر أيضاً
+            } catch (error) {
+                console.error('فشل في إرسال الرسالة:', error);
+                showToast('فشل في إرسال الرسالة');
+            }
+        }
+
+        // تحديث رسائل الدردشة (تحديث كلاً من شاشة الدردشة العادية والمصغرة)
+        function updateChatMessages(messages) {
+            const container = document.getElementById('chatMessages');
+            const compactContainer = document.getElementById('compactChatMessages');
+            
+            container.innerHTML = '';
+            compactContainer.innerHTML = '';
+            
+            messages.forEach(msg => {
+                const messageEl = document.createElement('div');
+                messageEl.className = 'chat-message flex items-start space-x-3 space-x-reverse';
+                
+                const avatarHtml = msg.userAvatar ? 
+                    `<img src="${msg.userAvatar}" class="w-8 h-8 rounded-full object-cover">` :
+                    `<div class="w-8 h-8 rounded-full avatar-pattern flex items-center justify-center text-sm font-bold">👤</div>`;
+                
+                const hostIndicator = msg.userId === roomHostIdCache ? 
+                    '<span class="text-xs bg-pink-600 px-1 py-0.5 rounded-full mr-1">المنشئ</span>' : '';
+
+                messageEl.innerHTML = `
+                    <div class="flex-shrink-0">${avatarHtml}</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="bg-white/10 rounded-2xl px-4 py-2 break-words">
+                            <div class="text-sm text-purple-300 font-semibold mb-1">${msg.userName} ${hostIndicator}</div>
+                            <div class="text-sm">${msg.message}</div>
+                        </div>
+                        <div class="text-xs text-gray-400 mt-1">${formatTime(msg.timestamp)}</div>
+                    </div>
+                `;
+                
+                container.appendChild(messageEl);
+                compactContainer.appendChild(messageEl.cloneNode(true)); // إضافة نسخة للدردشة المصغرة
+            });
+            
+            // التمرير للأسفل في الدردشة العادية
+            if (container.scrollHeight - container.clientHeight < container.scrollTop + 100) {
+                 container.scrollTop = container.scrollHeight;
+            }
+            // التمرير للأسفل في الدردشة المصغرة
+            if (compactContainer.scrollHeight - compactContainer.clientHeight < compactContainer.scrollTop + 100) {
+                 compactContainer.scrollTop = compactContainer.scrollHeight;
+            }
+        }
+        
+        // تحديث قائمة المشاركين في الواجهة
+        function updateParticipantsList(participants) {
+            const countEl = document.getElementById('participantsCount');
+            const modalCountEl = document.getElementById('modalParticipantsCount');
+            const listEl = document.getElementById('participantsList');
+            
+            // تحديث العداد
+            countEl.textContent = participants.length;
+            modalCountEl.textContent = participants.length;
+
+            // تحديث القائمة المنبثقة
+            listEl.innerHTML = '';
+            participants.forEach(p => {
+                const isCurrentUser = p.id === userId;
+                const isRoomHost = p.id === roomHostIdCache;
+
+                const avatarHtml = p.avatar ? 
+                    `<img src="${p.avatar}" class="w-10 h-10 rounded-full object-cover">` :
+                    `<div class="w-10 h-10 rounded-full avatar-pattern flex items-center justify-center text-sm font-bold">👤</div>`;
+                
+                const participantEl = document.createElement('div');
+                participantEl.className = 'flex items-center space-x-3 space-x-reverse p-2 bg-white/5 rounded-xl';
+                participantEl.innerHTML = `
+                    <div class="flex-shrink-0">${avatarHtml}</div>
+                    <div class="flex-1">
+                        <span class="font-semibold">${p.name}</span>
+                        ${isCurrentUser ? '<span class="text-xs bg-purple-600 px-2 py-0.5 rounded-full mr-2">أنت</span>' : ''}
+                        ${isRoomHost ? '<span class="text-xs bg-pink-600 px-2 py-0.5 rounded-full mr-2">المنشئ</span>' : ''}
+                    </div>
+                `;
+                listEl.appendChild(participantEl);
+            });
+        }
+        
+        function showParticipantsModal() {
+            document.getElementById('participantsModal').classList.remove('hidden');
+        }
+
+        function hideParticipantsModal() {
+            document.getElementById('participantsModal').classList.add('hidden');
+        }
+
+
+        // تبديل القائمة
+        function toggleMenu() {
+            const overlay = document.getElementById('menuOverlay');
+            if (overlay.classList.contains('hidden')) {
+                showMenu();
+            } else {
+                hideMenu();
+            }
+        }
+
+        function showMenu() {
+            document.getElementById('menuOverlay').classList.remove('hidden');
+        }
+
+        function hideMenu() {
+            document.getElementById('menuOverlay').classList.add('hidden');
+        }
+        
+        // تحديث أزرار القائمة (مثل زر الحذف)
+        function updateMenuButtons() {
+            const deleteBtn = document.getElementById('deleteRoomBtn');
+            if (isHost) {
+                deleteBtn.classList.remove('hidden');
+            } else {
+                deleteBtn.classList.add('hidden');
+            }
+        }
+
+        // تبديل وضع ملء الشاشة (تم تعطيله بناءً على طلب المستخدم، لكن الوظيفة موجودة)
+        function toggleFullscreen() {
+            const videoContainer = document.getElementById('videoContainer');
+            const chatContainer = document.getElementById('chatContainer');
+            const chatToggleBtn = document.getElementById('chatToggleBtn');
+            
+            if (!isFullscreen) {
+                // دخول وضع ملء الشاشة
+                videoContainer.classList.add('fullscreen-video', 'z-[1000]');
+                document.body.classList.add('overflow-hidden');
+                
+                // إظهار زر تبديل الدردشة (الافتراضية في هذا الوضع)
+                chatToggleBtn.classList.remove('hidden');
+                
+                // إخفاء الدردشة الثابتة العادية
+                chatContainer.classList.add('hidden'); 
+                
+                // إخفاء الدردشة المصغرة لضمان وضع البداية الصحيح
+                hideCompactChat(); 
+
+                isFullscreen = true;
+            } else {
+                // الخروج من وضع ملء الشاشة
+                videoContainer.classList.remove('fullscreen-video', 'z-[1000]');
+                document.body.classList.remove('overflow-hidden');
+                chatToggleBtn.classList.add('hidden');
+                
+                // التأكد من إخفاء الدردشة المصغرة عند الخروج
+                hideCompactChat();
+                
+                // إعادة إظهار الدردشة السفلية (الافتراضية)
+                if (chatVisible) {
+                    chatContainer.classList.remove('hidden');
+                }
+
+                isFullscreen = false;
+            }
+        }
+        
+        // إخفاء/إظهار الدردشة في وضع ملء الشاشة
+        function toggleChatVisibility() {
+             // هذه الدالة الآن مخصصة لزر التبديل في وضع ملء الشاشة فقط
+             if (isFullscreen) {
+                 // في هذا المثال، نستخدم التمرير (Swipe) للدردشة المصغرة، لذا نكتفي بإظهار/إخفاء الدردشة الثابتة العادية
+                 // ولكن زر التبديل يظهر فقط في وضع ملء الشاشة، لذلك يمكننا تفعيل خاصية الـ Swipe هنا
+                 if (document.getElementById('compactChat').classList.contains('hidden')) {
+                     showCompactChat();
+                 } else {
+                     hideCompactChat();
+                 }
+             }
+        }
+
+        // نسخ رابط الغرفة
+        function copyRoomLink() {
+            if (!currentRoomId) return showToast('لا يوجد رابط للغرفة');
+            // *** تم التعديل هنا لاستخدام المسار الثابت المطلوب ***
+            const link = `https://arbtha.github.io/turkish/?room=${currentRoomId}`;
+            
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(link).then(() => {
+                    showToast('تم نسخ الرابط');
+                    hideMenu();
+                }).catch(() => {
+                    showToast('فشل في النسخ، يرجى المحاولة يدوياً');
+                });
+            } else {
+                // حل احتياطي للنسخ في بيئة iframe
+                const tempInput = document.createElement('textarea');
+                tempInput.value = link;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                try {
+                    document.execCommand('copy');
+                    showToast('تم نسخ الرابط');
+                } catch (err) {
+                    showToast('فشل في النسخ، يرجى المحاولة يدوياً');
+                }
+                document.body.removeChild(tempInput);
+                hideMenu();
+            }
+        }
+
+        // إظهار نافذة تغيير الاسم
         function showChangeNameModal() {
             document.getElementById('newNameInput').value = currentUser.name;
             document.getElementById('changeNameModal').classList.remove('hidden');
@@ -761,17 +1244,27 @@
             document.getElementById('changeNameModal').classList.add('hidden');
         }
 
+        // حفظ الاسم الجديد
         async function saveName() {
             const newName = document.getElementById('newNameInput').value.trim();
             if (!newName) {
-                showToast('الاسم لا يمكن أن يكون فارغاً.');
+                showToast('يرجى إدخال اسم صحيح');
                 return;
             }
+            
             await saveUserProfile({ name: newName });
+            document.getElementById('roomUserName').textContent = newName;
+            
+            // تحديث الاسم في قائمة المشاركين بشكل يدوي وسريع
+            if (currentRoomId) {
+                await updateParticipantPresence();
+            }
+            
             hideChangeNameModal();
-            showToast('تم حفظ الاسم بنجاح.');
+            showToast('تم تغيير الاسم');
         }
 
+        // إظهار نافذة تغيير الصورة
         function showChangeAvatarModal() {
             document.getElementById('changeAvatarModal').classList.remove('hidden');
             hideMenu();
@@ -779,982 +1272,213 @@
 
         function hideChangeAvatarModal() {
             document.getElementById('changeAvatarModal').classList.add('hidden');
-            document.getElementById('newAvatarInput').value = null;
         }
 
-        async function saveAvatar() {
-            const input = document.getElementById('newAvatarInput');
-            const file = input.files[0];
+        // معالجة رفع الصورة الجديدة
+        function handleNewAvatarUpload(event) {
+            // لا نحتاج لـ preview في هذه النافذة، فقط للتأكد من اختيار الملف
+        }
 
+        // حفظ الصورة الجديدة (رفع إلى التخزين)
+        async function saveAvatar() {
+            const file = document.getElementById('newAvatarInput').files[0];
             if (file) {
-                const newAvatarUrl = await uploadAvatarFile(file);
-                if (newAvatarUrl) {
-                    await saveUserProfile({ avatar: newAvatarUrl });
-                    updatePreviewAvatar(newAvatarUrl);
-                    hideChangeAvatarModal();
-                    showToast('تم تحديث صورة البروفايل.');
+                await uploadAvatarFile(file);
+            } 
+            hideChangeAvatarModal();
+            showToast('تم تغيير الصورة');
+        }
+
+        async function uploadAvatarFile(file) {
+            try {
+                // نستخدم ID المستخدم لضمان أن المستخدم يملك الملف
+                const avatarPath = `avatars/${userId}/${generateId()}-${file.name}`;
+                const storageRef = ref(storage, avatarPath);
+                
+                await uploadBytes(storageRef, file);
+                const avatarUrl = await getDownloadURL(storageRef);
+                
+                // تحديث ملف المستخدم
+                await saveUserProfile({ avatar: avatarUrl, avatarPath: avatarPath });
+                updateUserAvatar();
+                updatePreviewAvatar(avatarUrl);
+                
+                // تحديث الصورة في قائمة المشاركين بشكل يدوي وسريع
+                if (currentRoomId) {
+                    await updateParticipantPresence();
                 }
-            } else {
-                hideChangeAvatarModal();
+
+                return avatarUrl; // نرجع الرابط النهائي
+                
+            } catch (error) {
+                console.error("Error uploading avatar:", error);
+                showToast('فشل في تحميل الصورة');
+                return currentUser.avatar; // نرجع الرابط القديم في حالة الفشل
             }
         }
 
+        // تحديث صورة المستخدم في الشريط العلوي
         function updateUserAvatar() {
             const avatarEl = document.getElementById('roomUserAvatar');
-            const nameEl = document.getElementById('roomUserName');
-            
-            nameEl.textContent = currentUser.name || 'مستخدم مجهول';
-            
-            if (currentUser.avatar) {
-                avatarEl.innerHTML = `<img src="${currentUser.avatar}" class="w-8 h-8 object-cover rounded-full">`;
+            if (currentUser && currentUser.avatar) {
+                avatarEl.innerHTML = `<img src="${currentUser.avatar}" class="w-full h-full object-cover rounded-full">`;
                 avatarEl.className = 'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold';
             } else {
-                avatarEl.innerHTML = (currentUser.name && currentUser.name.length > 0) ? currentUser.name[0].toUpperCase() : '👤';
+                avatarEl.innerHTML = '👤';
                 avatarEl.className = 'w-8 h-8 rounded-full avatar-pattern flex items-center justify-center text-sm font-bold';
             }
         }
 
-        // --- معالجة رفع الفيديو وإنشاء الغرفة (تم تعديلها لتسجيل الفيديوهات في Firestore) ---
-        
-        function getRoomRef(id) {
-            return doc(db, `/artifacts/${appId}/rooms/${id}`);
-        }
-        
-        function getRoomVideosCollectionRef(roomId) {
-            return collection(db, `/artifacts/${appId}/rooms/${roomId}/videos`);
-        }
-        
-        function getRoomVideoRef(roomId, videoId) {
-            return doc(db, `/artifacts/${appId}/rooms/${roomId}/videos/${videoId}`);
-        }
-        
-        function getRoomParticipantsCollectionRef(roomId) {
-            return collection(db, `/artifacts/${appId}/rooms/${roomId}/participants`);
-        }
-        
-        function getRoomParticipantRef(roomId, userId) {
-             return doc(db, `/artifacts/${appId}/rooms/${roomId}/participants/${userId}`);
-        }
-        
-        function getRoomMessagesCollectionRef(roomId) {
-             return collection(db, `/artifacts/${appId}/rooms/${roomId}/messages`);
-        }
-        
-        let selectedVideoForRoom = null;
-
-        function handleVideoUpload(event) {
-            const file = event.target.files[0];
-            const createBtn = document.getElementById('createRoomBtn');
-            const progressMessage = document.getElementById('progressMessage');
-            
-            if (file) {
-                selectedVideoForRoom = file;
-                createBtn.disabled = false;
-                progressMessage.textContent = `جاهز لرفع: ${file.name}`;
-                progressMessage.classList.remove('hidden', 'text-red-400');
-                progressMessage.classList.add('text-gray-300');
-            } else {
-                selectedVideoForRoom = null;
-                createBtn.disabled = true;
-                progressMessage.textContent = '';
-                progressMessage.classList.add('hidden');
-            }
-        }
-
-        async function uploadVideoFile(file, roomId, videoId, isInitial = false) {
-            if (!file) return null;
-
-            const videoPath = `artifacts/${appId}/data/rooms/${roomId}/videos/${videoId}/${file.name}`;
-            const storageRef = ref(storage, videoPath);
-            const uploadTask = uploadBytesResumable(storageRef, file);
-            
-            // إضافة مهمة الرفع إلى قائمة المهام الجارية
-            currentUploads[videoId] = { 
-                file: file,
-                progress: 0,
-                status: 'uploading',
-                task: uploadTask,
-                isInitial: isInitial 
-            };
-            
-            const roomVideoRef = getRoomVideoRef(roomId, videoId);
-
-            // تحديث حالة البداية في Firestore
-            await setDoc(roomVideoRef, {
-                id: videoId,
-                name: file.name,
-                uploaderId: userId,
-                uploadedAt: new Date(),
-                status: 'uploading',
-                path: videoPath,
-                videoUrl: null, // سيتم تحديثه عند الانتهاء
-            }, { merge: true });
-
-            return new Promise((resolve, reject) => {
-                uploadTask.on('state_changed', 
-                    (snapshot) => {
-                        // تحديث شريط التقدم (لشاشة إنشاء الغرفة أو مودال الفيديوهات)
-                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                        if (isInitial) {
-                            document.getElementById('uploadPercentage').textContent = `${Math.round(progress)}%`;
-                            document.getElementById('progressBar').style.width = `${progress}%`;
-                            document.getElementById('progressContainer').classList.remove('hidden');
-                        }
-                        
-                        // تحديث سجل الرفع الجاري
-                        currentUploads[videoId].progress = progress;
-                        if (!isInitial) {
-                            renderVideosList(roomVideosCache); // تحديث قائمة الفيديوهات لإظهار شريط التقدم
-                        }
-                    }, 
-                    (error) => {
-                        console.error("Upload failed:", error);
-                        delete currentUploads[videoId];
-                        setDoc(roomVideoRef, { status: 'failed', error: error.message }, { merge: true });
-                        showToast('فشل في رفع الفيديو.');
-                        document.getElementById('createRoomBtn').disabled = false;
-                        document.getElementById('addVideoBtn').disabled = !isHost;
-                        renderVideosList(roomVideosCache);
-                        reject(error);
-                    }, 
-                    async () => {
-                        const videoUrl = await getDownloadURL(uploadTask.snapshot.ref);
-                        delete currentUploads[videoId];
-                        
-                        // تحديث نهائي لـ Firestore (حالة: uploaded)
-                        await setDoc(roomVideoRef, { 
-                            status: 'uploaded', 
-                            videoUrl: videoUrl,
-                            thumbnailUrl: null // يمكن إضافة منطق لإنشاء صورة مصغرة لاحقًا
-                        }, { merge: true });
-
-                        if (isInitial) {
-                            document.getElementById('progressContainer').classList.add('hidden');
-                            document.getElementById('progressMessage').textContent = 'تم الرفع بنجاح.';
-                        }
-                        
-                        showToast(`تم تحميل الفيديو بنجاح: ${file.name}`);
-                        document.getElementById('createRoomBtn').disabled = false;
-                        document.getElementById('addVideoBtn').disabled = !isHost;
-                        renderVideosList(roomVideosCache);
-                        resolve(videoUrl);
-                    }
-                );
-            });
-        }
-
-
-        async function createRoom() {
-            if (!selectedVideoForRoom || !currentUser || !currentUser.name) return;
-
-            document.getElementById('createRoomBtn').disabled = true;
-            document.getElementById('progressMessage').textContent = 'جاري إنشاء الغرفة ورفع الفيديو...';
-            document.getElementById('progressMessage').classList.remove('hidden');
-            
-            const newRoomId = generateId(10);
-            const initialVideoId = generateId(15);
-
-            try {
-                // 1. رفع الفيديو الأولي
-                const videoUrl = await uploadVideoFile(selectedVideoForRoom, newRoomId, initialVideoId, true);
-                
-                // 2. إنشاء وثيقة الغرفة
-                const roomData = {
-                    hostId: userId,
-                    createdAt: new Date(),
-                    status: ROOM_STATUS_ACTIVE,
-                    currentVideoId: initialVideoId, 
-                    currentVideoUrl: videoUrl,
-                    playbackState: {
-                        isPlaying: false,
-                        time: 0,
-                        lastUpdated: Date.now(),
-                        updatedBy: userId,
-                        syncCount: 0 
-                    },
-                    participantsCount: 0 // سيتم تحديثه بواسطة المشاركين
-                };
-
-                await setDoc(getRoomRef(newRoomId), roomData);
-                
-                // 3. انضمام المضيف للغرفة
-                isHost = true;
-                currentRoomId = newRoomId;
-                await joinRoom(newRoomId, videoUrl, initialVideoId); // تمرير initialVideoId
-                
-                // 4. تحديث الرابط في شريط العنوان
-                history.pushState(null, '', `?room=${newRoomId}`);
-                
-            } catch (error) {
-                console.error("Error creating room or uploading video:", error);
-                showToast('فشل في إنشاء الغرفة.');
-                document.getElementById('createRoomBtn').disabled = false;
-                document.getElementById('progressContainer').classList.add('hidden');
-                document.getElementById('progressMessage').textContent = 'فشل في إنشاء الغرفة، حاول مجدداً.';
-                document.getElementById('progressMessage').classList.add('text-red-400');
-            }
-        }
-
-
-        // --- معالجة الانضمام للغرفة ---
-
-        async function attemptJoinRoom(roomId) {
-            try {
-                const roomSnap = await getDoc(getRoomRef(roomId));
-                
-                if (!roomSnap.exists()) {
-                    showToast('الغرفة غير موجودة أو انتهت.');
-                    history.pushState(null, '', window.location.pathname); // مسح البارامتر
-                    showCreateRoomScreen();
-                    return;
-                }
-                
-                const roomData = roomSnap.data();
-                
-                if (roomData.status !== ROOM_STATUS_ACTIVE) {
-                    showToast('الغرفة انتهت.');
-                    history.pushState(null, '', window.location.pathname); 
-                    showCreateRoomScreen();
-                    return;
-                }
-
-                // تحديد ما إذا كان المستخدم هو المضيف
-                isHost = (roomData.hostId === userId);
-                currentRoomId = roomId;
-                roomHostIdCache = roomData.hostId;
-                currentVideoId = roomData.currentVideoId;
-
-                // انضمام المستخدم للغرفة
-                await joinRoom(roomId, roomData.currentVideoUrl, roomData.currentVideoId);
-                
-            } catch (error) {
-                console.error("Error attempting to join room:", error);
-                showToast('فشل في الانضمام للغرفة.');
-                showCreateRoomScreen();
-            }
-        }
-
-        async function joinRoom(roomId, videoUrl, videoId) {
-            // إظهار شاشة الغرفة
-            showRoomScreen(roomId, videoUrl, isHost);
-            
-            // 1. تسجيل المشاركة في Firestore
-            const participantRef = getRoomParticipantRef(roomId, userId);
-            const participantData = {
-                id: userId,
-                name: currentUser.name,
-                avatar: currentUser.avatar || null,
-                joinedAt: Date.now(),
-                lastSeen: Date.now(),
-            };
-            await setDoc(participantRef, participantData);
-            
-            // 2. إعداد مستمعي Firestore
-            setupRoomListeners(roomId, videoId);
-            
-            // 3. تحديث حالة المشارك كل 30 ثانية
-            const participantInterval = setInterval(async () => {
-                await setDoc(participantRef, { lastSeen: Date.now() }, { merge: true });
-            }, 30000);
-            unsubscribes.push(() => clearInterval(participantInterval)); // حفظ الدالة لإلغاء الاشتراك
-        }
-        
-        // --- إدارة مستمعي الغرفة (Firebase Realtime Updates) ---
-        
-        function setupRoomListeners(roomId, videoId) {
-            // إلغاء أي اشتراكات سابقة
+        // الخروج من الغرفة
+        function leaveRoom(clearUrl = true) {
             unsubscribes.forEach(unsub => unsub());
-            unsubscribes = [];
+            unsubscribes = []; // إلغاء كل مستمعات الوقت الفعلي
             
-            // 1. مستمع حالة الفيديو (للمزامنة) - لكل المشاركين
-            const roomUnsub = onSnapshot(getRoomRef(roomId), (doc) => {
-                const room = doc.data();
-                if (room) {
-                    currentRoomId = doc.id; // تحديث الـ ID للتأكد
-                    roomHostIdCache = room.hostId; // تحديث هوية المضيف
-                    
-                    // تحديث قائمة الفيديوهات إذا تغيرت الحالة
-                    if (room.currentVideoId !== currentVideoId) {
-                         // تغيير الفيديو المشغل حالياً
-                         currentVideoId = room.currentVideoId;
-                         document.getElementById('mainVideo').src = room.currentVideoUrl;
-                         document.getElementById('mainVideo').load();
-                         // مزامنة فورية بعد تغيير المصدر
-                         syncPlayback(room.playbackState, true); 
-                    }
-                    
-                    // مزامنة حالة التشغيل والإيقاف والوقت (عدم المزامنة إذا كنت أنت المضيف الذي أجرى التغيير)
-                    if (!isHost || room.playbackState.updatedBy !== userId) {
-                        syncPlayback(room.playbackState);
-                    }
-                    
-                    // إذا انتهت الغرفة من قبل المضيف
-                    if (room.status === ROOM_STATUS_ENDED) {
-                        showToast('قام المضيف بإنهاء الغرفة.');
-                        leaveRoom(false); // خروج دون محاولة الحذف
-                    }
+            removeParticipant(); // إزالة المشارك عند الخروج
 
-                } else {
-                    // إذا تم حذف الغرفة من Firestore
-                    showToast('تم حذف الغرفة من قبل المضيف.');
-                    leaveRoom(false);
-                }
-            }, (error) => {
-                console.error("Room listener failed:", error);
-                showToast('انقطع الاتصال بالخادم.');
-                leaveRoom(false); 
-            });
-            unsubscribes.push(roomUnsub);
+            currentRoomId = null;
+            isHost = false;
+            isFullscreen = false;
+            roomHostIdCache = null;
             
-            // 2. مستمع المشاركين (لعرض قائمة المشاركين والعدد)
-            const participantsUnsub = onSnapshot(getRoomParticipantsCollectionRef(roomId), (snapshot) => {
-                let participants = [];
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    // حذف المشاركين غير النشطين (لم يتفاعلوا لأكثر من 5 دقائق)
-                    if (Date.now() - data.lastSeen < 5 * 60 * 1000) {
-                        participants.push(data);
-                    } else if (doc.id !== userId && doc.id !== roomHostIdCache) {
-                        // حذف المشارك إذا كان غير نشط وليس المضيف أو المستخدم الحالي
-                        deleteDoc(getRoomParticipantRef(roomId, doc.id)).catch(e => console.error("Failed to clean up participant:", e));
-                    }
-                });
-                
-                // تحديث واجهة المستخدم
-                document.getElementById('participantsCount').textContent = participants.length;
-                renderParticipantsList(participants);
-            }, (error) => {
-                 console.error("Participants listener failed:", error);
-            });
-            unsubscribes.push(participantsUnsub);
-            
-            // 3. مستمع الدردشة (الرسائل)
-            const chatQuery = query(getRoomMessagesCollectionRef(roomId), orderBy("timestamp", "asc"));
-            const chatUnsub = onSnapshot(chatQuery, (snapshot) => {
-                let messages = [];
-                snapshot.forEach(doc => messages.push(doc.data()));
-                renderMessages(messages);
-            }, (error) => {
-                 console.error("Chat listener failed:", error);
-            });
-            unsubscribes.push(chatUnsub);
-            
-            // 4. مستمع الفيديوهات (لإدارة قائمة الفيديوهات)
-            const videosQuery = query(getRoomVideosCollectionRef(roomId), orderBy("uploadedAt", "desc"));
-            const videosUnsub = onSnapshot(videosQuery, (snapshot) => {
-                let videos = [];
-                snapshot.forEach(doc => videos.push(doc.data()));
-                renderVideosList(videos);
-            }, (error) => {
-                 console.error("Videos listener failed:", error);
-            });
-            unsubscribes.push(videosUnsub);
-            
-            // 5. مستمع لملف الفيديو الحالي إذا لم يكن المضيف
-            if (!isHost) {
-                 const videoEl = document.getElementById('mainVideo');
-                 
-                 // المستمعون لعدم السماح للمشارك بالتحكم مباشرة
-                 videoEl.addEventListener('play', preventPlaybackControl);
-                 videoEl.addEventListener('pause', preventPlaybackControl);
-                 videoEl.addEventListener('seeking', preventPlaybackControl);
-                 videoEl.addEventListener('seeked', preventPlaybackControl);
+            // مسح مصدر الفيديو
+            document.getElementById('mainVideo').src = '';
+            document.getElementById('chatContainer').classList.add('hidden'); // إخفاء الدردشة الثابتة
+            hideCompactChat(); // إخفاء الدردشة المصغرة
 
-                 unsubscribes.push(() => {
-                    videoEl.removeEventListener('play', preventPlaybackControl);
-                    videoEl.removeEventListener('pause', preventPlaybackControl);
-                    videoEl.removeEventListener('seeking', preventPlaybackControl);
-                    videoEl.removeEventListener('seeked', preventPlaybackControl);
-                 });
+            if (clearUrl) {
+                 window.history.pushState({}, '', window.location.origin);
             }
+            
+            showCreateRoomScreen();
+            hideMenu();
+            hideParticipantsModal(); // إخفاء قائمة المشاركين
         }
         
-        function preventPlaybackControl(e) {
-             if (!isHost) {
-                const videoEl = document.getElementById('mainVideo');
-                // إعادة حالة التشغيل إلى ما تمليه حالة الغرفة (للمزامنة)
-                if (e.type === 'play') videoEl.pause();
-                if (e.type === 'pause') videoEl.play();
-                if (e.type === 'seeking') videoEl.currentTime = videoEl.lastTime || 0;
-                e.preventDefault();
-                e.stopImmediatePropagation();
-             }
-        }
-
-
-        // --- مزامنة الفيديو (Host Only) ---
-        
-        let syncTimeout = null;
-        let lastUpdateTime = 0;
-        const SYNC_COOLDOWN = 500; // 500ms بين تحديثات المزامنة
-
-        // دالة المزامنة بين الفيديو و Firestore (للمضيف)
-        async function updatePlaybackState() {
-            if (!isHost || !currentRoomId) return;
-
-            const now = Date.now();
-            if (now - lastUpdateTime < SYNC_COOLDOWN) {
-                // الانتظار حتى انتهاء فترة التهدئة
-                if (syncTimeout) clearTimeout(syncTimeout);
-                syncTimeout = setTimeout(updatePlaybackState, SYNC_COOLDOWN - (now - lastUpdateTime) + 50);
-                return;
-            }
-            lastUpdateTime = now;
-            
-            const videoEl = document.getElementById('mainVideo');
-            
-            const newState = {
-                isPlaying: !videoEl.paused,
-                time: videoEl.currentTime,
-                lastUpdated: now,
-                updatedBy: userId,
-                syncCount: firebase.increment(1) // تحديث عداد لضمان التحديث
-            };
-            
-            try {
-                // تحديث حالة التشغيل في Firestore
-                await setDoc(getRoomRef(currentRoomId), { playbackState: newState }, { merge: true });
-            } catch (error) {
-                console.error("Failed to update playback state:", error);
-            }
-        }
-
-        // مستمعات فيديو المضيف للمزامنة
-        function setupHostVideoListeners() {
-            const videoEl = document.getElementById('mainVideo');
-            
-            // يجب استدعاء updatePlaybackState عند تغيير حالة الفيديو
-            videoEl.addEventListener('play', updatePlaybackState);
-            videoEl.addEventListener('pause', updatePlaybackState);
-            videoEl.addEventListener('seeked', updatePlaybackState);
-
-            // عند الخروج من الغرفة، نزيل المستمعات
-            unsubscribes.push(() => {
-                videoEl.removeEventListener('play', updatePlaybackState);
-                videoEl.removeEventListener('pause', updatePlaybackState);
-                videoEl.removeEventListener('seeked', updatePlaybackState);
-            });
-        }
-        
-        // --- التحكم في الفيديو (Host Only) ---
-        
-        function togglePlayPause() {
-            if (!isHost) return;
-            const videoEl = document.getElementById('mainVideo');
-            if (videoEl.paused) {
-                videoEl.play();
-            } else {
-                videoEl.pause();
-            }
-            // المزامنة ستحدث عبر مستمع 'play' أو 'pause'
-            updatePlayPauseButton(videoEl.paused);
-        }
-        
-        function seekVideo(seconds) {
-            if (!isHost) return;
-            const videoEl = document.getElementById('mainVideo');
-            videoEl.currentTime += seconds;
-            // المزامنة ستحدث عبر مستمع 'seeked'
-        }
-
-        function updatePlayPauseButton(isPaused) {
-            const btn = document.getElementById('playPauseBtn');
-            if (isPaused) {
-                // رمز التشغيل (مثلث)
-                btn.innerHTML = '<svg class="w-6 h-6" fill="currentColor" viewbox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>';
-            } else {
-                // رمز الإيقاف المؤقت (شرطتان)
-                btn.innerHTML = '<svg class="w-6 h-6" fill="currentColor" viewbox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>';
-            }
-        }
-
-        // --- مزامنة الفيديو (Client/Viewer) ---
-        
-        function syncPlayback(state, forced = false) {
-            const videoEl = document.getElementById('mainVideo');
-
-            if (!videoEl || !state) return;
-
-            // 1. مزامنة التشغيل/الإيقاف
-            const shouldBePlaying = state.isPlaying;
-            if (shouldBePlaying && videoEl.paused) {
-                videoEl.play().catch(e => console.log("Auto-play blocked:", e));
-            } else if (!shouldBePlaying && !videoEl.paused) {
-                videoEl.pause();
-            }
-
-            // 2. مزامنة الوقت
-            const latency = (Date.now() - state.lastUpdated) / 1000;
-            let targetTime = state.time + (shouldBePlaying ? latency : 0);
-            
-            // التأكد من أن الوقت لا يتجاوز مدة الفيديو
-            if (videoEl.duration) {
-                targetTime = Math.min(targetTime, videoEl.duration);
-            }
-            
-            const timeDifference = Math.abs(videoEl.currentTime - targetTime);
-
-            // المزامنة إذا كان الفرق أكبر من 1.5 ثانية أو إذا كانت مزامنة قسرية (بعد تغيير الفيديو)
-            if (timeDifference > 1.5 || forced) {
-                videoEl.currentTime = targetTime;
-            }
-            
-            // تحديث زر التشغيل/الإيقاف للمضيف نفسه (للتأكد من عرضه للحالة الصحيحة)
-            if (isHost) {
-                updatePlayPauseButton(videoEl.paused);
-            }
-        }
-        
-        // --- وظائف المشاركين ---
-
-        function renderParticipantsList(participants) {
-            const listEl = document.getElementById('participantsList');
-            const countEl = document.getElementById('modalParticipantsCount');
-            listEl.innerHTML = '';
-            countEl.textContent = participants.length;
-            
-            participants.sort((a, b) => {
-                // المضيف أولاً
-                if (a.id === roomHostIdCache) return -1;
-                if (b.id === roomHostIdCache) return 1;
-                // ثم المستخدم الحالي
-                if (a.id === userId) return -1;
-                if (b.id === userId) return 1;
-                // أبجدياً بالاسم
-                return a.name.localeCompare(b.name);
-            }).forEach(p => {
-                const isHostDisplay = p.id === roomHostIdCache ? '<span class="text-xs bg-purple-500/50 px-2 py-0.5 rounded-full mr-2">المضيف</span>' : '';
-                const isMeDisplay = p.id === userId ? '<span class="text-xs bg-green-500/50 px-2 py-0.5 rounded-full mr-2">أنت</span>' : '';
-                
-                const avatarHTML = createAvatarHTML(p.avatar, p.name, 'w-10 h-10');
-                
-                const participantEl = document.createElement('div');
-                participantEl.className = 'flex items-center p-3 bg-white/5 rounded-xl shadow';
-                participantEl.innerHTML = `
-                    <div class="flex-shrink-0 ml-3">
-                        ${avatarHTML}
-                    </div>
-                    <div class="flex-1">
-                        <p class="font-semibold text-white">${p.name}</p>
-                        <p class="text-sm text-gray-400 flex items-center mt-0.5">
-                            ${isHostDisplay}
-                            ${isMeDisplay}
-                        </p>
-                    </div>
-                `;
-                listEl.appendChild(participantEl);
-            });
-        }
-        
-        function showParticipantsModal() {
-            document.getElementById('participantsModal').classList.remove('hidden');
+        // إظهار نافذة تأكيد الحذف
+        function handleDeleteRoom() {
+            showDeleteConfirmModal();
             hideMenu();
         }
 
-        function hideParticipantsModal() {
-            document.getElementById('participantsModal').classList.add('hidden');
-        }
-
-        // --- وظائف الدردشة ---
-        
-        function renderMessages(messages) {
-            const chatEl = document.getElementById('chatMessages');
-            const compactChatEl = document.getElementById('compactChatMessages');
-            
-            // حفظ حالة التمرير الحالية
-            const shouldScroll = chatEl.scrollHeight - chatEl.clientHeight <= chatEl.scrollTop + 50; 
-            const shouldScrollCompact = compactChatEl.scrollHeight - compactChatEl.clientHeight <= compactChatEl.scrollTop + 50; 
-
-            chatEl.innerHTML = '';
-            compactChatEl.innerHTML = '';
-
-            messages.forEach(msg => {
-                const isMine = msg.userId === userId;
-                const alignmentClass = isMine ? 'justify-end' : 'justify-start';
-                const bubbleClass = isMine ? 'bg-purple-600 text-white rounded-tr-none' : 'bg-gray-700 text-white rounded-tl-none';
-                
-                const avatarHTML = createAvatarHTML(msg.avatar, msg.userName, 'w-8 h-8');
-
-                const messageHTML = `
-                    <div class="flex ${alignmentClass} chat-message">
-                        ${!isMine ? `<div class="flex-shrink-0 ml-3">${avatarHTML}</div>` : ''}
-                        <div class="max-w-xs sm:max-w-sm">
-                            <p class="text-xs font-semibold mb-1 ${isMine ? 'text-right' : 'text-left'}">${msg.userName}</p>
-                            <div class="px-4 py-2 ${bubbleClass} rounded-2xl shadow-lg break-words">
-                                ${msg.text}
-                            </div>
-                        </div>
-                        ${isMine ? `<div class="flex-shrink-0 mr-3">${avatarHTML}</div>` : ''}
-                    </div>
-                `;
-                chatEl.innerHTML += messageHTML;
-                compactChatEl.innerHTML += messageHTML;
-            });
-            
-            // التمرير التلقائي للأسفل إذا كان المستخدم قريباً من الأسفل
-            if (shouldScroll) {
-                chatEl.scrollTop = chatEl.scrollHeight;
-            }
-            if (shouldScrollCompact) {
-                 compactChatEl.scrollTop = compactChatEl.scrollHeight;
-            }
-        }
-        
-        function createAvatarHTML(avatarUrl, name, sizeClass) {
-             let innerHTML;
-             let classNames = sizeClass + ' rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0';
-             
-             if (avatarUrl) {
-                 innerHTML = `<img src="${avatarUrl}" class="w-full h-full object-cover rounded-full">`;
-                 classNames = sizeClass + ' rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0';
-             } else {
-                 innerHTML = (name && name.length > 0) ? name[0].toUpperCase() : '👤';
-                 classNames += ' avatar-pattern';
-             }
-             
-             return `<div class="${classNames}">${innerHTML}</div>`;
-        }
-
-
-        async function sendMessage() {
-            if (!currentRoomId) return;
-            const input = document.getElementById('messageInput');
-            const message = input.value.trim();
-            
-            if (!message) return;
-
-            const messageData = {
-                userId: userId,
-                userName: currentUser.name,
-                avatar: currentUser.avatar || null,
-                text: message,
-                timestamp: Date.now()
-            };
-
-            try {
-                await addDoc(getRoomMessagesCollectionRef(currentRoomId), messageData);
-                input.value = '';
-            } catch (error) {
-                console.error("Failed to send message:", error);
-                showToast('فشل في إرسال الرسالة.');
-            }
-        }
-        
-        function toggleChatVisibility() {
-            const chatToggleBtn = document.getElementById('chatToggleBtn');
-            const chatContainer = document.getElementById('chatContainer');
-            
-            if (chatContainer.classList.contains('hidden')) {
-                // إظهار الدردشة
-                chatContainer.classList.remove('hidden');
-                chatVisible = true;
-                // handleResize(); // تم حذفها
-                
-                // تحديث زر الدردشة إلى "إخفاء"
-                chatToggleBtn.innerHTML = `
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h.01M4 12h.01M4 16h.01M20 8h.01M20 12h.01M20 16h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.505A9.76 9.76 0 0112 4c4.97 0 9 3.582 9 8z"/>
-                    </svg>
-                `;
-            } else {
-                // إخفاء الدردشة
-                chatContainer.classList.add('hidden');
-                chatVisible = false;
-                // handleResize(); // تم حذفها
-                
-                // تحديث زر الدردشة إلى "إظهار"
-                chatToggleBtn.innerHTML = `
-                     <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24">
-                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.505A9.76 9.76 0 0112 4c4.97 0 9 3.582 9 8z"/>
-                     </svg>
-                 `;
-            }
-        }
-
-
-        // --- وظائف قائمة الإعدادات / خيارات الغرفة ---
-
-        function toggleMenu() {
-            document.getElementById('menuOverlay').classList.toggle('hidden');
-        }
-        
-        function hideMenu() {
-            document.getElementById('menuOverlay').classList.add('hidden');
-        }
-
-        function copyRoomLink() {
-            const roomLink = `${window.location.origin}${window.location.pathname}?room=${currentRoomId}`;
-            navigator.clipboard.writeText(roomLink).then(() => {
-                showToast('تم نسخ رابط الغرفة.');
-            }).catch(err => {
-                console.error("Failed to copy link:", err);
-                showToast('فشل في نسخ الرابط.');
-            });
-            hideMenu();
-        }
-        
         function showDeleteConfirmModal() {
             document.getElementById('deleteConfirmModal').classList.remove('hidden');
-            hideMenu();
         }
 
         function hideDeleteConfirmModal() {
             document.getElementById('deleteConfirmModal').classList.add('hidden');
         }
-        
-        function handleDeleteRoom() {
-            showDeleteConfirmModal();
-        }
 
+        // حذف الغرفة (Host Only)
         async function handleDeleteRoomConfirmed() {
             if (!isHost || !currentRoomId) return;
-
             hideDeleteConfirmModal();
-            showToast('جاري حذف الغرفة وحذف ملف الفيديو...');
+
+            showToast('جاري حذف الغرفة والملفات...');
+            
+            const roomRef = doc(db, `/artifacts/${appId}/public/data/rooms/${currentRoomId}`);
             
             try {
-                // 1. تحديث حالة الغرفة إلى منتهية
-                await setDoc(getRoomRef(currentRoomId), { status: ROOM_STATUS_ENDED }, { merge: true });
-
-                // 2. الحصول على قائمة الفيديوهات لحذفها من Storage
-                const videosSnapshot = await getDocs(getRoomVideosCollectionRef(currentRoomId));
-                const deletePromises = [];
-
-                videosSnapshot.forEach(doc => {
-                    const videoData = doc.data();
-                    if (videoData.path) {
-                        const fileRef = ref(storage, videoData.path);
-                        // إضافة وعد حذف ملف Storage
-                        deletePromises.push(deleteObject(fileRef).catch(e => console.warn(`Failed to delete storage file ${videoData.path}:`, e)));
-                    }
-                    // إضافة وعد حذف وثيقة الفيديو من Firestore
-                    deletePromises.push(deleteDoc(getRoomVideoRef(currentRoomId, doc.id)).catch(e => console.warn(`Failed to delete video doc ${doc.id}:`, e)));
-                });
+                const roomSnap = await getDoc(roomRef);
+                if (!roomSnap.exists()) {
+                     throw new Error("Room not found for deletion.");
+                }
+                const roomData = roomSnap.data();
+                const videoPath = roomData.videoPath;
                 
-                // 3. حذف وثائق المشاركين (اختياري، المستمع يقوم بحذفهم بشكل تلقائي في النهاية)
-                const participantsSnapshot = await getDocs(getRoomParticipantsCollectionRef(currentRoomId));
-                participantsSnapshot.forEach(doc => {
-                    deletePromises.push(deleteDoc(getRoomParticipantRef(currentRoomId, doc.id)).catch(e => console.warn(`Failed to delete participant doc ${doc.id}:`, e)));
-                });
-                
-                // 4. حذف وثيقة الغرفة الرئيسية
-                deletePromises.push(deleteDoc(getRoomRef(currentRoomId)));
+                // 1. وضع حالة الغرفة على "انتهت" (لإرسال إشعار للمشتركين)
+                await setDoc(roomRef, { status: ROOM_STATUS_ENDED }, { merge: true });
 
-                // انتظار اكتمال جميع عمليات الحذف
-                await Promise.all(deletePromises);
+                // 2. حذف ملف الفيديو من Storage
+                if (videoPath) {
+                    const videoRef = ref(storage, videoPath);
+                    await deleteObject(videoRef);
+                }
                 
-                showToast('تم حذف الغرفة والفيديو بنجاح.');
-                leaveRoom(false); // الخروج للشاشة الرئيسية
+                // 3. حذف وثيقة الغرفة (اختياري)
+                await deleteDoc(roomRef); 
 
             } catch (error) {
-                console.error("Error deleting room:", error);
-                showToast('فشل في حذف الغرفة بشكل كامل.');
-                leaveRoom(false);
+                console.error('فشل في حذف الغرفة:', error);
+                showToast('فشل في حذف الغرفة. يرجى مراجعة الصلاحيات.');
+            } finally {
+                 leaveRoom();
             }
         }
-        
-        async function leaveRoom(cleanup = true) {
-            if (currentRoomId && userId && cleanup) {
-                try {
-                    // حذف المستخدم من قائمة المشاركين
-                    await deleteDoc(getRoomParticipantRef(currentRoomId, userId));
-                } catch (error) {
-                    console.error("Failed to clean up participant:", error);
-                }
-            }
-            
-            // إلغاء جميع الاشتراكات والمؤقتات
-            unsubscribes.forEach(unsub => unsub());
-            unsubscribes = [];
-            
-            // إعادة تعيين المتغيرات
-            currentRoomId = null;
-            isHost = false;
-            roomHostIdCache = null;
-            currentVideoId = null;
-            
-            // إخفاء الـ compact chat
-            hideCompactChat(); 
-            
-            // العودة إلى شاشة إنشاء الغرفة ومسح رابط الغرفة من العنوان
-            history.pushState(null, '', window.location.pathname);
-            showCreateRoomScreen();
+
+        function showSessionEndedMessage(activityName) {
+            showToast(`شكراً لتواجدكم، انتهت فعالية "${activityName}" مع أمل أنكم استمتعتم بالتجربة.`);
         }
 
-        // --- وظائف إدارة الفيديوهات ---
-        
-        let roomVideosCache = [];
-
-        function showVideosModal() {
-            document.getElementById('videosModal').classList.remove('hidden');
-            document.getElementById('addVideoBtn').disabled = !isHost; // تعطيل زر إضافة الفيديو لغير المضيفين
-            hideMenu();
-            // تحديث القائمة فوراً عند الفتح
-            renderVideosList(roomVideosCache);
-        }
-
-        function hideVideosModal() {
-            document.getElementById('videosModal').classList.add('hidden');
-            document.getElementById('additionalVideoInput').value = null; // مسح إدخال الملف
+        // إظهار الشاشات
+        function showLoginScreen() {
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('createRoomScreen').classList.add('hidden');
+            document.getElementById('roomScreen').classList.add('hidden');
+            document.getElementById('chatContainer').classList.add('hidden');
         }
         
-        async function handleAdditionalVideoUpload(event) {
-             const file = event.target.files[0];
-             document.getElementById('additionalVideoInput').value = null; // مسح الإدخال
-             
-             if (!file || !isHost || !currentRoomId) return;
-
-             document.getElementById('addVideoBtn').disabled = true;
-             
-             const newVideoId = generateId(15);
-             
-             try {
-                // رفع الفيديو وإضافته إلى قائمة فيديوهات الغرفة
-                await uploadVideoFile(file, currentRoomId, newVideoId, false);
-             } catch(error) {
-                showToast(`فشل في إضافة الفيديو: ${file.name}`);
-             } finally {
-                document.getElementById('addVideoBtn').disabled = !isHost;
-             }
+        function showCreateRoomScreen() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('createRoomScreen').classList.remove('hidden');
+            document.getElementById('roomScreen').classList.add('hidden');
+            document.getElementById('chatContainer').classList.add('hidden');
+            
+            document.getElementById('createRoomBtn').disabled = !videoFile;
+            document.getElementById('progressMessage').classList.add('hidden');
+            document.getElementById('progressContainer').classList.add('hidden');
         }
 
-
-        function renderVideosList(videos) {
-            const listEl = document.getElementById('videosList');
-            listEl.innerHTML = '';
-            roomVideosCache = videos; // تحديث الـ cache
-
-            if (videos.length === 0) {
-                listEl.innerHTML = '<p class="text-gray-400 text-center">لا توجد فيديوهات محملة بعد.</p>';
-                return;
-            }
-
-            videos.forEach(video => {
-                const isCurrent = video.id === currentVideoId;
-                const isUploading = currentUploads[video.id] && currentUploads[video.id].status === 'uploading';
-                const isFailed = video.status === 'failed';
-                
-                let statusText = '';
-                let buttonHTML = '';
-                let progressHTML = '';
-                
-                if (isCurrent) {
-                    statusText = '<span class="text-xs bg-blue-500/50 px-2 py-0.5 rounded-full mr-2">جاري العرض</span>';
-                    buttonHTML = `<button disabled class="bg-gray-600/50 text-white px-3 py-1 rounded-lg text-sm transition-colors disabled:opacity-50">قيد العرض</button>`;
-                } else if (isUploading) {
-                    const progress = currentUploads[video.id].progress || 0;
-                    statusText = `<span class="text-xs bg-yellow-500/50 px-2 py-0.5 rounded-full mr-2">جاري الرفع</span>`;
-                    progressHTML = `
-                        <div class="mt-2 w-full bg-gray-700 rounded-full h-1.5">
-                            <div class="bg-yellow-500 h-1.5 rounded-full" style="width: ${progress}%"></div>
-                        </div>
-                        <p class="text-xs text-yellow-300 mt-1">${Math.round(progress)}% مكتمل</p>
-                    `;
-                    buttonHTML = `<button disabled class="bg-gray-600/50 text-white px-3 py-1 rounded-lg text-sm disabled:opacity-50">جاري الرفع</button>`;
-                } else if (isFailed) {
-                    statusText = `<span class="text-xs bg-red-500/50 px-2 py-0.5 rounded-full mr-2">فشل الرفع</span>`;
-                    buttonHTML = `<button data-video-id="${video.id}" data-action="delete" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg text-sm transition-colors disabled:opacity-50" ${isHost ? '' : 'disabled'}>حذف</button>`;
-                } else {
-                    statusText = `<span class="text-xs bg-green-500/50 px-2 py-0.5 rounded-full mr-2">جاهز</span>`;
-                    buttonHTML = `<button data-video-id="${video.id}" data-action="play" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-sm transition-colors disabled:opacity-50" ${isHost ? '' : 'disabled'}>تشغيل</button>`;
-                }
-                
-                const deleteBtn = `<button data-video-id="${video.id}" data-action="delete" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg text-sm transition-colors mr-2 disabled:opacity-50" ${isHost && !isCurrent ? '' : 'disabled'}>حذف</button>`;
-
-                const videoEl = document.createElement('div');
-                videoEl.className = 'p-4 bg-white/5 rounded-xl shadow';
-                videoEl.innerHTML = `
-                    <p class="font-semibold text-white truncate mb-1">${video.name}</p>
-                    <div class="flex items-center text-sm text-gray-400 mb-2">
-                        ${statusText}
-                    </div>
-                    ${progressHTML}
-                    <div class="mt-3 flex justify-end">
-                         ${deleteBtn}
-                         ${isHost && !isUploading && !isFailed ? buttonHTML : ''}
-                    </div>
-                `;
-                
-                listEl.appendChild(videoEl);
-            });
+        function showRoomScreen(roomId, url, isHost) {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('createRoomScreen').classList.add('hidden');
+            document.getElementById('roomScreen').classList.remove('hidden');
+            document.getElementById('chatContainer').classList.remove('hidden'); // إظهار الدردشة الثابتة
             
-            // إضافة مستمعات الأحداث للقائمة (تشغيل/حذف)
-            listEl.querySelectorAll('button').forEach(button => {
-                if (!button.disabled) {
-                    button.addEventListener('click', handleVideoListAction);
-                }
+            document.getElementById('roomUserName').textContent = currentUser.name;
+            updateUserAvatar();
+            setupVideoPlayer(url, isHost);
+        }
+
+        // وظائف مساعدة
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString('ar-SA', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
             });
         }
-        
-        async function handleVideoListAction(event) {
-            const button = event.target;
-            const videoId = button.dataset.videoId;
-            const action = button.dataset.action;
-            
-            if (!videoId || !currentRoomId || !isHost) return;
-            
-            hideVideosModal();
 
-            if (action === 'play') {
-                await switchVideo(videoId);
-            } else if (action === 'delete') {
-                await deleteRoomVideo(videoId);
+        function showToast(message) {
+            const toastContainer = document.querySelector('.toast-container');
+            if (!toastContainer) {
+                const container = document.createElement('div');
+                container.className = 'toast-container fixed top-4 inset-x-0 flex justify-center z-[5000] space-x-2 space-x-reverse pointer-events-none';
+                document.body.appendChild(container);
             }
-        }
-        
-        async function switchVideo(videoId) {
-            const video = roomVideosCache.find(v => v.id === videoId);
-            if (!video || video.status !== 'uploaded') return;
 
-            showToast(`جاري تبديل الفيديو إلى: ${video.name}`);
+            const toast = document.createElement('div');
+            toast.className = 'bg-purple-600 text-white px-6 py-3 rounded-xl shadow-xl transition-opacity duration-300 opacity-0 transform translate-y-4 max-w-xs text-center pointer-events-auto';
+            toast.textContent = message;
             
-            try {
-                // تحديث حالة الغرفة بالفيديو الجديد
-                const newState = {
-                    currentVideoId: videoId,
-                    currentVideoUrl: video.videoUrl,
-                    // إعادة تعيين حالة التشغيل للبداية (الإيقاف المؤقت عند 0)
-                    playbackState: {
-                        isPlaying: false,
-                        time: 0,
-                        lastUpdated: Date.now(),
-                        updatedBy: userId,
-                        syncCount: firebase.increment(1)
-                    }
-                };
-
-                await setDoc(getRoomRef(currentRoomId), newState, { merge: true });
-                // سيتم التقاط التحديث بواسطة مستمع الغرفة والمزامنة
-                showToast('تم تبديل الفيديو بنجاح.');
-
-            } catch (error) {
-                console.error("Failed to switch video:", error);
-                showToast('فشل في تبديل الفيديو.');
-            }
-        }
-        
-        async function deleteRoomVideo(videoId) {
-            const video = roomVideosCache.find(v => v.id === videoId);
-            if (!video || video.id === currentVideoId) return; // لا يمكن حذف الفيديو قيد العرض
-
-             showToast(`جاري حذف الفيديو: ${video.name}`);
-             
-             try {
-                // 1. حذف ملف Storage
-                if (video.path) {
-                    const fileRef = ref(storage, video.path);
-                    await deleteObject(fileRef).catch(e => console.warn(`Failed to delete storage file ${video.path}:`, e));
-                }
-                
-                // 2. حذف وثيقة الفيديو من Firestore
-                await deleteDoc(getRoomVideoRef(currentRoomId, videoId));
-                
-                showToast('تم حذف الفيديو بنجاح.');
-                // سيتم تحديث القائمة تلقائياً عبر المستمع
-             } catch (error) {
-                console.error("Failed to delete video:", error);
-                showToast('فشل في حذف الفيديو.');
-             }
+            document.querySelector('.toast-container').appendChild(toast);
+            
+            // Show animation
+            setTimeout(() => {
+                toast.classList.remove('opacity-0', 'translate-y-4');
+                toast.classList.add('opacity-100', 'translate-y-0');
+            }, 10);
+            
+            // Hide animation
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-4');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
 
         // بدء التطبيق
