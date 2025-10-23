@@ -11,14 +11,14 @@
     // استيراد جميع وظائف Firebase اللازمة
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, orderBy, where, addDoc, deleteDoc, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, orderBy, where, addDoc, deleteDoc, runTransaction, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
     import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     
     // تعريف المتغيرات العامة لتمكين استخدامها في جميع أنحاء الكود
     window.firebase = {
         initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, updateProfile,
-        getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, orderBy, where, addDoc, deleteDoc, runTransaction,
+        getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, orderBy, where, addDoc, deleteDoc, runTransaction, getDocs,
         getStorage, ref, uploadBytes, getDownloadURL, deleteObject, uploadBytesResumable, setLogLevel
     };
   </script>
@@ -87,13 +87,8 @@
             border-top-right-radius: 1rem;
         }
         
-        /* حجم الدردشة الثابتة في الوضع العادي (للتأكد من أن Video Container يأخذ المساحة الصحيحة) */
-        /* يرجى تغيير هذا إذا غيرت ارتفاع div#chatMessages أو padding حوله */
-        .chat-fixed-height {
-             /* 64 (h-64) + 16 (p-4 top) + 16 (p-4 bottom) + 16 (input height approx) + 1 (border) = 217px تقريبا. سنستخدم قيمة آمنة */
-             height: 250px; 
-             /* تم تعديل هذا الارتفاع ليتناسب مع pb-[250px] في roomScreen */
-        }
+        /* إزالة نمط الارتفاع الثابت للدردشة لتمكين التكيف */
+        /* .chat-fixed-height { height: 250px; } */
 
         /* زر إخفاء الدردشة في وضع ملء الشاشة */
         .chat-toggle-btn {
@@ -143,7 +138,9 @@
      <div id="progressMessage" class="text-center text-sm text-gray-300 hidden"></div>
     </div>
    </div>
-  </div><div id="roomScreen" class="hidden min-h-full flex flex-col pb-[250px]">
+  </div>
+  
+  <div id="roomScreen" class="hidden min-h-full flex flex-col">
     <div id="compactChat" class="fixed top-0 bottom-0 left-0 w-80 bg-black/80 backdrop-blur-lg z-[1001] transition-transform duration-300 ease-in-out transform -translate-x-full hidden md:w-96">
         <div class="h-full flex flex-col">
             <div class="p-4 flex justify-between items-center border-b border-white/10">
@@ -189,7 +186,7 @@
      <div class="flex space-x-4 space-x-reverse bg-black/50 p-3 rounded-full">
          
          <button id="rewindBtn" class="bg-white/20 hover:bg-white/30 p-3 rounded-full transition-colors" title="تأخير 10 ثواني">
-           <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 5V2L8 6l4 4V7c3.31 0 6 2.69 6 6s-2.69 6-6 6a5.996 5.996 0 01-5.12-2.88L3.46 17.5c2.11 3.59 5.86 6 10.04 6 6.07 0 11-4.93 11-11S18.07 2 12 2z"/></svg>
+           <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 5V2L8 6l4 4V7c3.31 0 6 2.69 6 6s-2.69 6-6 6a5.996 0 01-5.12-2.88L3.46 17.5c2.11 3.59 5.86 6 10.04 6 6.07 0 11-4.93 11-11S18.07 2 12 2z"/></svg>
         </button>
          
         <button id="playPauseBtn" class="bg-white/20 hover:bg-white/30 p-3 rounded-full transition-colors">
@@ -197,19 +194,19 @@
         </button>
          
         <button id="forwardBtn" class="bg-white/20 hover:bg-white/30 p-3 rounded-full transition-colors" title="تقديم 10 ثواني">
-           <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 19V22l4-4-4-4v3c-3.31 0-6-2.69-6-6s2.69-6 6-6a5.996 5.996 0 015.12 2.88L20.54 6.5c-2.11-3.59-5.86-6-10.04-6-6.07 0-11 4.93-11 11s4.93 11 11 11z"/></svg>
+           <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 19V22l4-4-4-4v3c-3.31 0-6-2.69-6-6s2.69-6 6-6a5.996 0 015.12 2.88L20.54 6.5c-2.11-3.59-5.86-6-10.04-6-6.07 0-11 4.93-11 11s4.93 11 11 11z"/></svg>
         </button>
      </div>
     </div>
    </div>
-  </div>
-  
-  <div id="chatContainer" class="fixed inset-x-0 bottom-0 bg-black/30 backdrop-blur-lg border-t border-white/10 z-20 hidden">
-    <div id="chatMessages" class="h-64 overflow-y-auto p-4 space-y-3"></div>
-    <div class="p-4 border-t border-white/10">
-     <div class="flex space-x-2 space-x-reverse"><input type="text" id="messageInput" class="flex-1 px-4 py-2 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-gray-400" placeholder="اكتب رسالة..."> <button id="sendBtn" class="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-xl font-semibold transition-colors">إرسال</button>
-     </div>
-    </div>
+   
+   <div id="chatContainer" class="bg-black/30 backdrop-blur-lg border-t border-white/10 z-20 hidden">
+        <div id="chatMessages" class="h-64 overflow-y-auto p-4 space-y-3"></div>
+        <div class="p-4 border-t border-white/10">
+         <div class="flex space-x-2 space-x-reverse"><input type="text" id="messageInput" class="flex-1 px-4 py-2 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-gray-400" placeholder="اكتب رسالة..."> <button id="sendBtn" class="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-xl font-semibold transition-colors">إرسال</button>
+         </div>
+        </div>
+   </div>
   </div>
   
   <div id="menuOverlay" class="hidden fixed inset-0 menu-overlay z-50">
@@ -219,12 +216,47 @@
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
     </div>
-    <div class="space-y-2"><button id="copyLinkBtn" class="w-full text-right p-3 hover:bg-white/10 rounded-lg transition-colors">نسخ رابط الغرفة</button> <button id="changeNameBtn" class="w-full text-right p-3 hover:bg-white/10 rounded-lg transition-colors">تغيير الاسم</button> <button id="changeAvatarBtn" class="w-full text-right p-3 hover:bg-white/10 rounded-lg transition-colors">تغيير الصورة</button>
+    <div class="space-y-2">
+     <button id="uploadedVideosBtn" class="w-full text-right p-3 hover:bg-white/10 rounded-lg transition-colors">
+        الفيديوهات المحملة
+     </button>
+     
+     <button id="copyLinkBtn" class="w-full text-right p-3 hover:bg-white/10 rounded-lg transition-colors">نسخ رابط الغرفة</button> <button id="changeNameBtn" class="w-full text-right p-3 hover:bg-white/10 rounded-lg transition-colors">تغيير الاسم</button> <button id="changeAvatarBtn" class="w-full text-right p-3 hover:bg-white/10 rounded-lg transition-colors">تغيير الصورة</button>
      <button id="deleteRoomBtn" class="w-full text-right p-3 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors hidden">حذف الغرفة</button>
      <button id="leaveRoomBtn" class="w-full text-right p-3 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors">الخروج من الغرفة</button>
     </div>
    </div>
-  </div><div id="changeNameModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+  </div>
+  
+  <div id="uploadedVideosModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold">الفيديوهات المحملة</h3>
+            <button id="closeVideosModalBtn" class="p-1 rounded-full hover:bg-white/20 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        
+        <div id="videosList" class="space-y-4 mb-6">
+            <p class="text-gray-400 text-center">لا توجد فيديوهات محملة بعد.</p>
+        </div>
+        
+        <label for="newVideoInput" class="w-full">
+            <input type="file" id="newVideoInput" accept="video/*" class="hidden">
+            <div id="addNewVideoBtn" class="w-full bg-green-600 hover:bg-green-700 py-3 rounded-xl font-semibold transition-colors text-center cursor-pointer">
+                إضافة فيديو جديد
+            </div>
+        </label>
+
+        <div id="activeUploadsContainer" class="mt-6 border-t border-white/20 pt-4 hidden">
+             <h4 class="font-semibold mb-3">التحميلات الجارية:</h4>
+             <div id="activeUploadsList" class="space-y-3">
+             </div>
+        </div>
+    </div>
+  </div>
+  
+  <div id="changeNameModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
    <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 w-full max-w-sm">
     <h3 class="text-xl font-bold mb-4">تغيير الاسم</h3><input type="text" id="newNameInput" class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-gray-400 mb-4" placeholder="الاسم الجديد">
     <div class="flex space-x-2 space-x-reverse"><button id="saveNameBtn" class="flex-1 bg-purple-600 hover:bg-purple-700 py-2 rounded-lg transition-colors">حفظ</button> <button id="cancelNameBtn" class="flex-1 bg-gray-600 hover:bg-gray-700 py-2 rounded-lg transition-colors">إلغاء</button>
@@ -260,7 +292,7 @@
   <script type="module">
         // استيراد وظائف Firebase من النطاق العام بعد التحميل
         const { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, 
-                getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, orderBy, where, addDoc, deleteDoc, 
+                getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, orderBy, where, addDoc, deleteDoc, getDocs, 
                 getStorage, ref, uploadBytes, getDownloadURL, deleteObject, uploadBytesResumable, setLogLevel, updateProfile } = window.firebase;
         
         // المتغيرات العامة للحالة و Firebase
@@ -272,6 +304,9 @@
         let videoFile = null;
         let videoUrl = null;
         let roomHostIdCache = null; // لتخزين ID المضيف للغرفة
+
+        let uploadedVideos = []; // لتخزين قائمة الفيديوهات التي قام المستخدم بتحميلها (أو الغرف التي أنشأها)
+        let activeUploadTasks = {}; // لتخزين مهام الرفع الجارية
 
         // حالة السحب (Swipe) الجديدة
         let startX = 0;
@@ -470,7 +505,11 @@
                 if (e.key === 'Enter') sendCompactMessage();
             });
 
-
+            // قائمة الفيديوهات المحملة الجديدة
+            document.getElementById('uploadedVideosBtn').addEventListener('click', showUploadedVideosModal);
+            document.getElementById('closeVideosModalBtn').addEventListener('click', hideUploadedVideosModal);
+            document.getElementById('newVideoInput').addEventListener('change', handleAdditionalVideoUpload);
+            
             // التحكم في الفيديو للمنشئ
             document.getElementById('playPauseBtn').addEventListener('click', togglePlayPause);
             document.getElementById('rewindBtn').addEventListener('click', () => seekVideo(-10)); // جديد: تأخير 10 ثواني
@@ -504,7 +543,6 @@
                 e.preventDefault();
             }
             
-            // إذا كنا نظهر الدردشة المصغرة، يمكننا هنا تحريك الفيديو مع الإصبع (للحصول على تأثير سحب سلس)
             // نكتفي بالتحريك النهائي لتجنب التعقيد في هذه المرحلة.
         }
 
@@ -623,52 +661,77 @@
             }
         }
 
-        // معالجة رفع الفيديو
+        // معالجة رفع الفيديو (الشاشة الرئيسية)
         function handleVideoUpload(event) {
             const file = event.target.files[0];
             if (file) {
                 videoFile = file;
                 document.getElementById('createRoomBtn').disabled = false;
-                showToast(`تم اختيار الملف: ${file.name}`); // *** إشعار عند اختيار الملف بنجاح ***
+                showToast(`تم اختيار الملف: ${file.name}`);
             }
         }
 
-        // إنشاء الغرفة
-        async function createRoom() {
-            const authUser = auth.currentUser; 
-            
-            if (!videoFile || !userId || !currentUser || !currentUser.name || !authUser) {
-                console.error("Authentication/State Check Failed. userId:", userId, "currentUser:", currentUser, "AuthUser:", authUser);
-                showToast('يرجى اختيار ملف فيديو والانتظار حتى يتم تسجيل الدخول بالكامل.');
+        // --- وظائف إدارة الفيديوهات والتحميل الجديد (للتعديل) ---
+
+        // Function to handle the upload and room creation, used by both initial and additional uploads
+        async function uploadVideoAndCreateRoom(file, isInitialCreation = false) {
+            const newRoomId = generateId();
+            const uploadId = newRoomId; // Use room ID as upload ID for simplicity in this case
+
+            if (!userId || !currentUser || !currentUser.name) {
+                showToast('يرجى تسجيل الدخول أولاً.');
                 return;
             }
-            
-            const roomId = generateId();
-            currentRoomId = roomId;
-            isHost = true;
-            
-            const createBtn = document.getElementById('createRoomBtn');
-            const progressMsg = document.getElementById('progressMessage');
-            const progressContainer = document.getElementById('progressContainer');
-            const progressBar = document.getElementById('progressBar');
-            const uploadPercentage = document.getElementById('uploadPercentage');
-            
-            createBtn.disabled = true;
-            progressMsg.textContent = 'جاري رفع الفيديو وإنشاء الغرفة... قد يستغرق الأمر بعض الوقت.';
-            progressMsg.classList.remove('hidden');
-            progressContainer.classList.remove('hidden'); // إظهار واجهة التقدم
-            progressBar.style.width = '0%';
-            uploadPercentage.textContent = '0%';
+
+            let progressEl, progressMsg, progressBar, uploadPercentage;
+
+            if (isInitialCreation) {
+                // Initial Upload UI (Create Room Screen)
+                const createBtn = document.getElementById('createRoomBtn');
+                progressMsg = document.getElementById('progressMessage');
+                const progressContainer = document.getElementById('progressContainer');
+                progressBar = document.getElementById('progressBar');
+                uploadPercentage = document.getElementById('uploadPercentage');
+                
+                createBtn.disabled = true;
+                progressMsg.textContent = 'جاري رفع الفيديو وإنشاء الغرفة... قد يستغرق الأمر بعض الوقت.';
+                progressMsg.classList.remove('hidden');
+                progressContainer.classList.remove('hidden'); 
+                progressBar.style.width = '0%';
+                uploadPercentage.textContent = '0%';
+            } else {
+                // Additional Upload UI (Modal Screen)
+                const activeUploadsList = document.getElementById('activeUploadsList');
+                document.getElementById('activeUploadsContainer').classList.remove('hidden');
+
+                progressEl = document.createElement('div');
+                progressEl.id = `upload-${uploadId}`;
+                progressEl.className = 'p-3 bg-white/10 rounded-xl';
+                progressEl.innerHTML = `
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="font-semibold text-sm truncate">${file.name}</span>
+                        <span id="upload-percent-${uploadId}" class="text-sm">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-2">
+                        <div id="upload-bar-${uploadId}" class="bg-yellow-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                    <p id="upload-msg-${uploadId}" class="text-xs text-gray-400 mt-2">جاري الرفع...</p>
+                `;
+                activeUploadsList.prepend(progressEl); // إظهار التحميل في الأعلى
+                
+                progressMsg = document.getElementById(`upload-msg-${uploadId}`);
+                progressBar = document.getElementById(`upload-bar-${uploadId}`);
+                uploadPercentage = document.getElementById(`upload-percent-${uploadId}`);
+            }
 
             try {
-                // 1. Upload video to Storage - (Path is correct for public data access by authenticated users)
-                const videoPath = `artifacts/${appId}/public/data/videos/rooms/${roomId}/${videoFile.name}`;
+                const videoPath = `artifacts/${appId}/public/data/videos/rooms/${newRoomId}/${file.name}`;
                 const storageRef = ref(storage, videoPath);
                 
-                // استخدام uploadBytesResumable لتمكين تتبع التقدم
-                const uploadTask = uploadBytesResumable(storageRef, videoFile);
-                
-                // تحديث شريط التقدم
+                const uploadTask = uploadBytesResumable(storageRef, file);
+                activeUploadTasks[uploadId] = uploadTask;
+
+                // تتبع التقدم
                 await new Promise((resolve, reject) => {
                     uploadTask.on('state_changed', 
                         (snapshot) => {
@@ -676,13 +739,12 @@
                             progressBar.style.width = progress.toFixed(0) + '%';
                             uploadPercentage.textContent = progress.toFixed(0) + '%';
                             
-                            switch (snapshot.state) {
-                                case 'paused':
-                                    progressMsg.textContent = 'الرفع متوقف مؤقتاً';
-                                    break;
-                                case 'running':
-                                    progressMsg.textContent = 'جاري رفع الفيديو...';
-                                    break;
+                            if (isInitialCreation) {
+                                 // Update initial screen message
+                                 progressMsg.textContent = snapshot.state === 'paused' ? 'الرفع متوقف مؤقتاً' : 'جاري رفع الفيديو...';
+                            } else {
+                                 // Update modal screen message
+                                 progressMsg.textContent = snapshot.state === 'paused' ? 'الرفع متوقف مؤقتاً' : 'جاري الرفع...';
                             }
                         }, 
                         (error) => {
@@ -695,22 +757,22 @@
                     );
                 });
                 
-                const videoUrl = await getDownloadURL(uploadTask.snapshot.ref); // الحصول على الرابط بعد الاكتمال
+                const videoUrl = await getDownloadURL(uploadTask.snapshot.ref);
                 
                 // 2. Create Room document in Firestore
-                const roomRef = doc(db, `/artifacts/${appId}/public/data/rooms/${roomId}`);
+                const roomRef = doc(db, `/artifacts/${appId}/public/data/rooms/${newRoomId}`);
                 await setDoc(roomRef, {
-                    id: roomId,
+                    id: newRoomId,
                     hostId: userId,
                     videoUrl: videoUrl,
-                    videoPath: videoPath, // لحذفه لاحقاً
+                    videoPath: videoPath, 
                     status: ROOM_STATUS_ACTIVE,
                     createdAt: Date.now(),
-                    name: currentUser.name // اسم المنشئ كاسم افتراضي للفعالية
+                    name: file.name // استخدام اسم الملف كعنوان للفيديو
                 });
-                
+
                 // 3. Create initial video state document
-                const stateRef = doc(db, `/artifacts/${appId}/public/data/rooms/${roomId}/state/main`);
+                const stateRef = doc(db, `/artifacts/${appId}/public/data/rooms/${newRoomId}/state/main`);
                 await setDoc(stateRef, {
                     currentTime: 0,
                     isPlaying: false,
@@ -718,26 +780,182 @@
                     timestamp: Date.now()
                 });
 
-                // 4. Update presence and transition
-                await updateParticipantPresence(roomId); // تسجيل الحضور
-                window.history.pushState({}, '', `?room=${roomId}`);
-                showRoomScreen(roomId, videoUrl, true);
-                startRealtimeSync(roomId);
+                // Final UI Updates and Navigation
+                if (isInitialCreation) {
+                    // Initial creation: Navigate to room
+                    currentRoomId = newRoomId; 
+                    isHost = true;
+                    await updateParticipantPresence(newRoomId); 
+                    window.history.pushState({}, '', `?room=${newRoomId}`);
+                    showRoomScreen(newRoomId, videoUrl, true);
+                    startRealtimeSync(newRoomId);
+                } else {
+                    // Additional upload: Update modal UI
+                    progressMsg.textContent = 'تم الرفع بنجاح. انقر للعرض.';
+                    progressBar.classList.remove('bg-yellow-500');
+                    progressBar.classList.add('bg-green-500');
+                    
+                    // Add click listener to switch video
+                    progressEl.classList.add('cursor-pointer');
+                    progressEl.addEventListener('click', () => switchVideo(newRoomId, videoUrl));
+                    
+                    updateUploadedVideosList(); // Refresh the main video list
+                    showToast(`تم تحميل الفيديو بنجاح: ${file.name}`);
+                }
                 
             } catch (error) {
-                console.error('فشل في إنشاء الغرفة:', error);
-                // عرض رسالة الخطأ للمستخدم
-                if (error.code === 'storage/unauthorized') {
-                    showToast('فشل في رفع الفيديو: لا توجد صلاحيات. تأكد أنك مصادق وأن قواعد أمان Storage تسمح بالوصول للمسار العام.');
+                console.error('فشل في تحميل الفيديو وإنشاء الغرفة:', error);
+                showToast('فشل في تحميل الفيديو أو إنشاء الغرفة. (قد تكون مشكلة في الرفع)');
+                
+                if (isInitialCreation) {
+                    document.getElementById('createRoomBtn').disabled = false;
+                    document.getElementById('progressMessage').textContent = 'فشل الرفع. حاول مرة أخرى.';
                 } else {
-                    showToast('فشل في إنشاء الغرفة أو تحميل الفيديو. (قد تكون مشكلة في الرفع)');
+                    progressMsg.textContent = 'فشل الرفع. حاول مرة أخرى.';
+                    progressBar.classList.remove('bg-yellow-500');
+                    progressBar.classList.add('bg-red-500');
                 }
             } finally {
-                createBtn.disabled = false;
-                progressMsg.classList.add('hidden');
-                progressContainer.classList.add('hidden'); // إخفاء واجهة التقدم
+                 if (isInitialCreation) {
+                    document.getElementById('createRoomBtn').disabled = false;
+                    document.getElementById('progressContainer').classList.add('hidden');
+                    document.getElementById('progressMessage').classList.add('hidden');
+                 }
+                delete activeUploadTasks[uploadId];
             }
         }
+
+        // إنشاء الغرفة (Simplified to call the unified logic)
+        async function createRoom() {
+            const authUser = auth.currentUser; 
+            
+            if (!videoFile || !userId || !currentUser || !currentUser.name || !authUser) {
+                showToast('يرجى اختيار ملف فيديو والانتظار حتى يتم تسجيل الدخول بالكامل.');
+                return;
+            }
+            
+            // Call the unified upload logic
+            await uploadVideoAndCreateRoom(videoFile, true);
+        }
+
+        // معالجة اختيار فيديو إضافي من نافذة الفيديوهات المحملة
+        function handleAdditionalVideoUpload(event) {
+            const files = event.target.files;
+            if (files.length > 0) {
+                // نأخذ الملف الأول فقط، ولكن المنطق يمكنه دعم عدة ملفات
+                const file = files[0]; 
+                uploadVideoAndCreateRoom(file, false);
+            }
+            event.target.value = ''; // إعادة تعيين لتمكين تحميل نفس الملف مرة أخرى
+        }
+
+
+        // إظهار نافذة الفيديوهات المحملة
+        function showUploadedVideosModal() {
+            hideMenu();
+            updateUploadedVideosList(); 
+            document.getElementById('uploadedVideosModal').classList.remove('hidden');
+        }
+
+        // إخفاء نافذة الفيديوهات المحملة
+        function hideUploadedVideosModal() {
+            document.getElementById('uploadedVideosModal').classList.add('hidden');
+        }
+
+        // جلب الغرف النشطة التي أنشأها المستخدم
+        async function fetchUserRooms() {
+            if (!userId) return [];
+            
+            try {
+                const roomsRef = collection(db, `/artifacts/${appId}/public/data/rooms`);
+                // البحث عن الغرف التي أنشأها المستخدم والتي ما زالت نشطة
+                const q = query(roomsRef, where('hostId', '==', userId), where('status', '==', ROOM_STATUS_ACTIVE), orderBy('createdAt', 'desc')); 
+                const snapshot = await getDocs(q); 
+                
+                uploadedVideos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                return uploadedVideos;
+            } catch (error) {
+                console.error('فشل في جلب غرف المستخدم:', error);
+                return [];
+            }
+        }
+
+        // تحديث قائمة الفيديوهات المعروضة في النافذة المنبثقة
+        async function updateUploadedVideosList() {
+            const listEl = document.getElementById('videosList');
+            listEl.innerHTML = '<p class="text-gray-400 text-center">جاري تحميل قائمة الفيديوهات...</p>';
+            
+            const videos = await fetchUserRooms();
+            
+            listEl.innerHTML = ''; 
+
+            if (videos.length === 0) {
+                listEl.innerHTML = '<p class="text-gray-400 text-center">لم تقم بتحميل أي فيديوهات بعد.</p>';
+                return;
+            }
+
+            videos.forEach(video => {
+                const isCurrent = video.id === currentRoomId;
+                
+                const videoEl = document.createElement('div');
+                // تمييز الفيديو المعروض حالياً باللون الأزرق كما طلب المستخدم
+                videoEl.className = `p-3 flex items-center space-x-4 space-x-reverse rounded-xl cursor-pointer transition-all duration-200 ${isCurrent ? 'bg-blue-600/30 border-2 border-blue-400 shadow-lg' : 'bg-white/10 hover:bg-white/20'}`;
+                
+                const nameDisplay = video.name || 'فيديو بدون عنوان';
+                const dateDisplay = new Date(video.createdAt).toLocaleDateString('ar-SA');
+                
+                videoEl.innerHTML = `
+                    <div class="flex-shrink-0 w-16 h-10 bg-black/50 rounded-lg flex items-center justify-center overflow-hidden">
+                        <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold truncate">${nameDisplay}</p>
+                        <p class="text-sm text-gray-400">${dateDisplay}</p>
+                    </div>
+                    ${isCurrent ? '<span class="text-xs bg-blue-600 px-2 py-0.5 rounded-full">معروض حالياً</span>' : ''}
+                `;
+                
+                // دالة التبديل عند النقر على الفيديو
+                videoEl.addEventListener('click', () => switchVideo(video.id, video.videoUrl));
+                listEl.appendChild(videoEl);
+            });
+        }
+
+        // التبديل إلى فيديو/غرفة جديدة
+        async function switchVideo(newRoomId, videoUrl) {
+            if (newRoomId === currentRoomId) {
+                hideUploadedVideosModal();
+                return;
+            }
+            
+            showToast('جاري التبديل إلى الفيديو الجديد...');
+            
+            // 1. الخروج من الغرفة الحالية (دون مسح الرابط)
+            leaveRoom(false); 
+            
+            // 2. الانضمام للغرفة الجديدة (الغرفة هي الفيديو)
+            const roomRef = doc(db, `/artifacts/${appId}/public/data/rooms/${newRoomId}`);
+            const roomSnap = await getDoc(roomRef);
+
+            if (roomSnap.exists() && roomSnap.data().status === ROOM_STATUS_ACTIVE) {
+                const roomData = roomSnap.data();
+                currentRoomId = newRoomId;
+                isHost = roomData.hostId === userId; // تأكيد حالة الاستضافة بناءً على بيانات الغرفة الجديدة
+                roomHostIdCache = roomData.hostId;
+                
+                showRoomScreen(newRoomId, roomData.videoUrl, isHost);
+                await updateParticipantPresence(newRoomId); 
+                startRealtimeSync(newRoomId);
+                window.history.pushState({}, '', `?room=${newRoomId}`);
+                hideUploadedVideosModal();
+                showToast(`تم عرض فيديو: ${roomData.name || 'بدون عنوان'}`);
+            } else {
+                showToast('فشل في عرض الفيديو. الغرفة غير موجودة أو انتهت.');
+                showCreateRoomScreen(); 
+            }
+        }
+        
+        // --- نهاية وظائف إدارة الفيديوهات والتحميل الجديد ---
 
         // محاولة الانضمام إلى غرفة (عند التحميل أو من الرابط)
         async function attemptJoinRoom(roomId) {
@@ -1433,7 +1651,7 @@
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('createRoomScreen').classList.add('hidden');
             document.getElementById('roomScreen').classList.remove('hidden');
-            document.getElementById('chatContainer').classList.remove('hidden'); // إظهار الدردشة الثابتة
+            document.getElementById('chatContainer').classList.remove('hidden'); // إظهار الدردشة الثابتة (المرنة الآن)
             
             document.getElementById('roomUserName').textContent = currentUser.name;
             updateUserAvatar();
