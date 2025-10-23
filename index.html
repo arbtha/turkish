@@ -512,7 +512,9 @@
             videoContainer.addEventListener('touchend', handleTouchEnd);
         }
         
-        // --- وظائف التحكم في الفيديو (إظهار/إخفاء عناصر التحكم الأصلية عند النقر) ---
+        // **********************************************
+        // *** تم دمج دالة setupVideoPlayer في مكان واحد (تم حذف التعريف المكرر) ***
+        // **********************************************
         function setupVideoPlayer(url, isHost) {
             const video = document.getElementById('mainVideo');
             video.src = url;
@@ -522,6 +524,8 @@
             video.onpause = null;
             video.onplay = null;
             video.onseeked = null;
+            video.onclick = null; // إزالة المستمع السابق إن وجد
+
             
             // مستمع للتأكد من تحميل الفيديو قبل محاولة تشغيله
             video.addEventListener('loadedmetadata', () => {
@@ -532,7 +536,6 @@
             });
 
             // *** التعديل: مستمع النقر لإظهار عناصر التحكم الأصلية مؤقتاً ***
-            video.onclick = null; // إزالة المستمع السابق
             video.addEventListener('click', () => {
                 // إظهار عناصر التحكم الأصلية عند النقر/اللمس
                 video.controls = true;
@@ -569,34 +572,8 @@
             // تهيئة زر التشغيل/الإيقاف بناءً على حالة الفيديو الأولية
             updatePlayPauseButton(!video.paused);
         }
+        // **********************************************
         
-        // تحديث زر التشغيل/الإيقاف و **إخفاء عناصر التحكم الإضافية عند التشغيل**
-        function updatePlayPauseButton(isPlaying) {
-            const btn = document.getElementById('playPauseBtn');
-            const hostControls = document.getElementById('hostControls');
-            const video = document.getElementById('mainVideo');
-            
-            // إظهار/إخفاء عناصر التحكم الافتراضية للفيديو:
-            // دائماً نضبطها على 'false' ونعتمد على مستمع النقر لإظهارها مؤقتاً
-            // ولا حاجة لعناصر التحكم الأصلية للمضيف
-            video.controls = false; 
-
-            // *** التعديل: إخفاء عناصر تحكم المضيف عند التشغيل (مطلوب) ***
-            if (isHost) {
-                 if (isPlaying) {
-                     hostControls.classList.add('hidden'); // إخفاء الأزرار الإضافية عند التشغيل
-                 } else {
-                     hostControls.classList.remove('hidden'); // إظهار الأزرار الإضافية عند الإيقاف
-                 }
-            }
-
-
-            if (isPlaying) {
-                btn.innerHTML = '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>'; // Pause icon
-            } else {
-                btn.innerHTML = '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>'; // Play icon
-            }
-        }
         // ... بقية وظائف التحكم في اللمس (Swipe) ...
         
         function handleTouchStart(e) {
@@ -905,65 +882,6 @@
             } catch (error) {
                 console.error('فشل في إزالة المشارك:', error);
             }
-        }
-
-        // إعداد مشغل الفيديو
-        function setupVideoPlayer(url, isHost) {
-            const video = document.getElementById('mainVideo');
-            video.src = url;
-            videoUrl = url; // حفظ URL لاستخدامه لاحقاً
-            
-            // إيقاف جميع المستمعات السابقة لتجنب التكرار
-            video.onpause = null;
-            video.onplay = null;
-            video.onseeked = null;
-            video.onclick = null; // إزالة المستمع السابق إن وجد
-
-            
-            // مستمع للتأكد من تحميل الفيديو قبل محاولة تشغيله
-            video.addEventListener('loadedmetadata', () => {
-                 if (isHost) {
-                     // يمكننا تمكين التشغيل التلقائي هنا إذا أردنا أن يبدأ فوراً
-                     // video.play().catch(e => console.log('Autoplay failed:', e)); 
-                 }
-            });
-
-            // *** التعديل: مستمع النقر لإظهار عناصر التحكم الأصلية مؤقتاً ***
-            video.addEventListener('click', () => {
-                // إظهار عناصر التحكم الأصلية عند النقر/اللمس
-                video.controls = true;
-                
-                // إخفاء عناصر التحكم الأصلية بعد 3 ثوانٍ
-                setTimeout(() => {
-                    video.controls = false;
-                }, 3000); 
-            });
-
-
-            if (isHost) {
-                // عرض عناصر التحكم للمضيف عند التحميل الأولي (تُخفى لاحقاً عند التشغيل)
-                document.getElementById('hostControls').classList.remove('hidden'); 
-                
-                // إعادة تعيين المستمعات الخاصة بالمضيف
-                video.onpause = () => { broadcastVideoState('pause'); updatePlayPauseButton(false); };
-                video.onplay = () => { broadcastVideoState('play'); updatePlayPauseButton(true); };
-                // استخدام seeked لضمان استقرار وقت الفيديو قبل البث
-                video.onseeked = () => broadcastVideoState('seek');
-
-                // لضمان تزامن الوقت بشكل دوري إذا لم يكن هناك تفاعل (كل 5 ثواني)
-                const syncInterval = setInterval(() => {
-                    if (!video.paused && currentRoomId && isHost) {
-                         broadcastVideoState('sync');
-                    }
-                }, 5000); 
-                unsubscribes.push(() => clearInterval(syncInterval)); // دالة إلغاء الاشتراك للمؤقت
-
-            } else {
-                document.getElementById('hostControls').classList.add('hidden');
-            }
-            
-            // تهيئة زر التشغيل/الإيقاف بناءً على حالة الفيديو الأولية
-            updatePlayPauseButton(!video.paused);
         }
 
         // بث حالة الفيديو (للمنشئ فقط)
