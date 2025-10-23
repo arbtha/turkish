@@ -24,11 +24,14 @@
   </script>
   
   <style>
-        body {
+        /* التعديل الرئيسي لضمان ملء الشاشة وإزالة الفراغات */
+        html, body {
+            height: 100%;
+            overflow: hidden; 
             box-sizing: border-box;
             font-family: 'Inter', sans-serif;
         }
-        
+
         /* نمط لخلفية صورة البروفايل الافتراضية */
         .avatar-pattern {
             background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
@@ -96,7 +99,8 @@
     </style>
   <style>@view-transition { navigation: auto; }</style>
  </head>
- <body class="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 min-h-full text-white"><div id="loginScreen" class="min-h-full flex items-center justify-center p-4">
+ <body class="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 min-h-screen h-screen text-white overflow-hidden">
+   <div id="loginScreen" class="min-h-full flex items-center justify-center p-4">
    <div class="bg-white/10 backdrop-blur-lg rounded-3xl p-8 w-full max-w-md shadow-2xl border border-white/20">
     <div class="text-center mb-8">
      <h1 id="appTitle" class="text-3xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">مشاهدة جماعية</h1>
@@ -135,7 +139,7 @@
    </div>
   </div>
   
-  <div id="roomScreen" class="hidden min-h-full flex flex-col">
+  <div id="roomScreen" class="hidden h-full flex flex-col">
     <div id="compactChat" class="fixed top-0 bottom-0 left-0 w-80 bg-black/80 backdrop-blur-lg z-[1001] transition-transform duration-300 ease-in-out transform -translate-x-full hidden md:w-96">
         <div class="h-full flex flex-col">
             <div class="p-4 flex justify-between items-center border-b border-white/10">
@@ -931,10 +935,12 @@
                 const videoEl = document.createElement('div');
                 // تمييز الفيديو المعروض حالياً بالإطار الأزرق والخلفية
                 const currentClass = isCurrent ? 'bg-blue-600/30 border-2 border-blue-400 shadow-lg' : 'bg-white/10 hover:bg-white/20';
-                videoEl.className = `p-3 flex items-center space-x-4 space-x-reverse rounded-xl cursor-pointer transition-all duration-200 ${currentClass}`;
+                const buttonDisabled = !isHost ? 'pointer-events-none opacity-80' : '';
                 
                 const nameDisplay = video.name || 'فيديو بدون عنوان';
                 const dateDisplay = new Date(video.createdAt).toLocaleDateString('ar-SA');
+                
+                videoEl.className = `p-3 flex items-center space-x-4 space-x-reverse rounded-xl cursor-pointer transition-all duration-200 ${currentClass} ${buttonDisabled}`;
                 
                 videoEl.innerHTML = `
                     <div class="flex-shrink-0 w-16 h-10 bg-black/50 rounded-lg flex items-center justify-center overflow-hidden">
@@ -948,7 +954,9 @@
                 `;
                 
                 // دالة التبديل عند النقر على الفيديو
-                videoEl.addEventListener('click', () => switchVideo(video.id, video.videoUrl));
+                if(isHost) {
+                   videoEl.addEventListener('click', () => switchVideo(video.id, video.videoUrl));
+                }
                 listEl.appendChild(videoEl);
             });
         }
