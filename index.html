@@ -172,25 +172,33 @@
      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
      </svg>
     </button>
-   </div><div id="videoContainer" class="flex-1 bg-black relative transition-transform duration-300 ease-in-out">
-    <video id="mainVideo" class="w-full h-full object-contain" crossorigin="anonymous" playsinline></video><button id="chatToggleBtn" class="chat-toggle-btn p-2 rounded-full hidden" aria-label="Toggle Chat">
-     <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.505A9.76 9.76 0 0112 4c4.97 0 9 3.582 9 8z" />
-     </svg></button><div id="hostControls" class="absolute bottom-4 left-0 right-0 p-4 rounded-t-lg hidden flex justify-center">
-     <div class="flex space-x-4 space-x-reverse bg-black/50 p-3 rounded-full">
+   </div>
+   
+   <div id="videoContainer" class="flex-1 bg-black relative transition-transform duration-300 ease-in-out p-4">
+        <div id="videoWrapper" class="relative w-full" style="padding-top: 56.25%;">
+            <video id="mainVideo" class="absolute top-0 left-0 w-full h-full object-cover" crossorigin="anonymous" playsinline></video>
+        </div>
+        
+        <button id="chatToggleBtn" class="chat-toggle-btn p-2 rounded-full hidden" aria-label="Toggle Chat">
+         <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.505A9.76 9.76 0 0112 4c4.97 0 9 3.582 9 8z" />
+         </svg></button>
          
-         <button id="rewindBtn" class="bg-white/20 hover:bg-white/30 p-3 rounded-full transition-colors" title="تأخير 10 ثواني">
-           <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 5V2L8 6l4 4V7c3.31 0 6 2.69 6 6s-2.69 6-6 6a5.996 5.996 0 01-5.12-2.88L3.46 17.5c2.11 3.59 5.86 6 10.04 6 6.07 0 11-4.93 11-11S18.07 2 12 2z"/></svg>
-        </button>
-         
-        <button id="playPauseBtn" class="bg-white/20 hover:bg-white/30 p-3 rounded-full transition-colors">
-           <svg class="w-6 h-6" fill="currentColor" viewbox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-        </button>
-         
-        <button id="forwardBtn" class="bg-white/20 hover:bg-white/30 p-3 rounded-full transition-colors" title="تقديم 10 ثواني">
-           <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 19V22l4-4-4-4v3c-3.31 0-6-2.69-6-6s2.69-6 6-6a5.996 5.996 0 015.12 2.88L20.54 6.5c-2.11-3.59-5.86-6-10.04-6-6.07 0-11 4.93-11 11s4.93 11 11 11z"/></svg>
-        </button>
-     </div>
-    </div>
+         <div id="hostControls" class="absolute bottom-4 left-0 right-0 p-4 rounded-t-lg hidden flex justify-center">
+             <div class="flex space-x-4 space-x-reverse bg-black/50 p-3 rounded-full">
+                 
+                 <button id="rewindBtn" class="bg-white/20 hover:bg-white/30 p-3 rounded-full transition-colors" title="تأخير 10 ثواني">
+                   <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 5V2L8 6l4 4V7c3.31 0 6 2.69 6 6s-2.69 6-6 6a5.996 5.996 0 01-5.12-2.88L3.46 17.5c2.11 3.59 5.86 6 10.04 6 6.07 0 11-4.93 11-11S18.07 2 12 2z"/></svg>
+                </button>
+                 
+                <button id="playPauseBtn" class="bg-white/20 hover:bg-white/30 p-3 rounded-full transition-colors">
+                   <svg class="w-6 h-6" fill="currentColor" viewbox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                </button>
+                 
+                <button id="forwardBtn" class="bg-white/20 hover:bg-white/30 p-3 rounded-full transition-colors" title="تقديم 10 ثواني">
+                   <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 19V22l4-4-4-4v3c-3.31 0-6-2.69-6-6s2.69-6 6-6a5.996 5.996 0 015.12 2.88L20.54 6.5c-2.11-3.59-5.86-6-10.04-6-6.07 0-11 4.93-11 11s4.93 11 11 11z"/></svg>
+                </button>
+             </div>
+         </div>
    </div>
   </div>
   
@@ -422,16 +430,21 @@
             }
         }
 
-        // تحديث عرض الصورة في شاشة تسجيل الدخول
+        // تحديث عرض الصورة في شاشة تسجيل الدخول - تم تعديلها
         function updatePreviewAvatar(avatarUrl) {
             const previewEl = document.getElementById('avatarPreview');
+            // إعادة ضبط فئة النمط الافتراضي
+            previewEl.className = 'w-20 h-20 rounded-full mx-auto mb-4 avatar-pattern flex items-center justify-center text-2xl font-bold';
+            
             if (avatarUrl && avatarUrl.startsWith('data:')) { // إذا كان URL مؤقت (من file reader)
                 previewEl.innerHTML = `<img src="${avatarUrl}" class="w-full h-full object-cover rounded-full">`;
+                previewEl.classList.remove('avatar-pattern'); // إزالة النمط عند وجود صورة
             } else if (avatarUrl) { // إذا كان URL دائم (من Firebase Storage)
                  previewEl.innerHTML = `<img src="${avatarUrl}" class="w-full h-full object-cover rounded-full">`;
+                 previewEl.classList.remove('avatar-pattern'); // إزالة النمط عند وجود صورة
             } else {
                 previewEl.innerHTML = '👤';
-                previewEl.className = 'w-20 h-20 rounded-full mx-auto mb-4 avatar-pattern flex items-center justify-center text-2xl font-bold';
+                previewEl.classList.add('avatar-pattern'); // إضافة النمط عند عدم وجود صورة
             }
         }
 
@@ -664,33 +677,14 @@
                 document.getElementById('deleteRoomBtn').classList.add('hidden');
             }
 
-            // إظهار مربع الدردشة أسفل الفيديو
-            document.getElementById('chatContainer').classList.remove('hidden');
+            // إخفاء مربع الدردشة أسفل الفيديو (نعتمد على الدردشة المصغرة الآن)
+            document.getElementById('chatContainer').classList.add('hidden');
             
             updateUserAvatar(); // تحديث الصورة في شاشة الغرفة
-            
-            // إعادة ضبط حجم الشاشة عند الدخول للغرفة
-            handleResize();
         }
         
-        window.addEventListener('resize', handleResize);
-
-        function handleResize() {
-            const roomScreen = document.getElementById('roomScreen');
-            const videoContainer = document.getElementById('videoContainer');
-            const chatContainer = document.getElementById('chatContainer');
-            const header = roomScreen.querySelector('.bg-black\\/50'); // الحصول على شريط الرأس
-
-            if (roomScreen && videoContainer && chatContainer && header) {
-                // حساب الارتفاع المتاح للفيديو
-                const headerHeight = header.offsetHeight;
-                const chatHeight = chatContainer.offsetHeight;
-                const availableHeight = window.innerHeight - headerHeight - chatHeight;
-
-                // تطبيق الارتفاع المتاح على حاوية الفيديو
-                videoContainer.style.height = `${availableHeight}px`;
-            }
-        }
+        // تم حذف دالة handleResize
+        // window.addEventListener('resize', handleResize);
 
 
         // --- معالجة تسجيل الدخول / البروفايل ---
@@ -734,10 +728,8 @@
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     // عرض الصورة الجديدة بشكل مؤقت في الـ modal
-                    const previewEl = document.getElementById('changeAvatarModal').querySelector('img');
-                    if (previewEl) {
-                        previewEl.src = e.target.result;
-                    }
+                    // (لا يوجد عرض مباشر للصورة الجديدة في هذا الكود، يمكن إضافته هنا إذا لزم الأمر)
+                    // لكن دالة saveAvatar ستقوم بالرفع الفعلي والتحديث
                 };
                 reader.readAsDataURL(file);
             }
@@ -814,7 +806,7 @@
             nameEl.textContent = currentUser.name || 'مستخدم مجهول';
             
             if (currentUser.avatar) {
-                avatarEl.innerHTML = `<img src="${currentUser.avatar}" class="w-full h-full object-cover rounded-full">`;
+                avatarEl.innerHTML = `<img src="${currentUser.avatar}" class="w-8 h-8 object-cover rounded-full">`;
                 avatarEl.className = 'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold';
             } else {
                 avatarEl.innerHTML = (currentUser.name && currentUser.name.length > 0) ? currentUser.name[0].toUpperCase() : '👤';
@@ -912,7 +904,7 @@
                         // تحديث سجل الرفع الجاري
                         currentUploads[videoId].progress = progress;
                         if (!isInitial) {
-                            updateList(); // تحديث قائمة الفيديوهات لإظهار شريط التقدم
+                            renderVideosList(roomVideosCache); // تحديث قائمة الفيديوهات لإظهار شريط التقدم
                         }
                     }, 
                     (error) => {
@@ -922,6 +914,7 @@
                         showToast('فشل في رفع الفيديو.');
                         document.getElementById('createRoomBtn').disabled = false;
                         document.getElementById('addVideoBtn').disabled = !isHost;
+                        renderVideosList(roomVideosCache);
                         reject(error);
                     }, 
                     async () => {
@@ -943,6 +936,7 @@
                         showToast(`تم تحميل الفيديو بنجاح: ${file.name}`);
                         document.getElementById('createRoomBtn').disabled = false;
                         document.getElementById('addVideoBtn').disabled = !isHost;
+                        renderVideosList(roomVideosCache);
                         resolve(videoUrl);
                     }
                 );
@@ -1454,7 +1448,7 @@
                 // إظهار الدردشة
                 chatContainer.classList.remove('hidden');
                 chatVisible = true;
-                handleResize(); // إعادة ضبط حجم الفيديو بعد إظهار الدردشة
+                // handleResize(); // تم حذفها
                 
                 // تحديث زر الدردشة إلى "إخفاء"
                 chatToggleBtn.innerHTML = `
@@ -1466,7 +1460,7 @@
                 // إخفاء الدردشة
                 chatContainer.classList.add('hidden');
                 chatVisible = false;
-                handleResize(); // إعادة ضبط حجم الفيديو بعد إخفاء الدردشة (ليشغل المساحة كاملة)
+                // handleResize(); // تم حذفها
                 
                 // تحديث زر الدردشة إلى "إظهار"
                 chatToggleBtn.innerHTML = `
